@@ -40,40 +40,67 @@ It should feel like the **creator control room built on top of Bags**.
 ---
 
 ## Color System
-The system should feel visually compatible with Bags while being more structured for product tooling.
+The system should feel visually native to Bags — black and green, clean and premium.
 
-### Base Colors
-- `bg-primary`: `#0A0A0B`
-- `bg-surface`: `#111216`
-- `bg-surface-2`: `#161922`
-- `bg-elevated`: `#1B1F2A`
-- `border-subtle`: `#232733`
-- `border-strong`: `#2E3445`
+### Dark Mode (Default)
 
-### Text Colors
-- `text-primary`: `#F5F7FA`
-- `text-secondary`: `#A4ACBC`
-- `text-muted`: `#6E7687`
-- `text-inverse`: `#0A0A0B`
+#### Base Colors
+- `bg-primary`: `#000000`
+- `bg-surface`: `#0A0A0A`
+- `bg-surface-2`: `#111111`
+- `bg-elevated`: `#1A1A1A`
+- `border-subtle`: `#1F1F1F`
+- `border-strong`: `#2A2A2A`
 
-### Accent Colors
-These should be used carefully, with one primary accent active per screen.
+#### Text Colors
+- `text-primary`: `#FFFFFF`
+- `text-secondary`: `#A1A1A1`
+- `text-muted`: `#666666`
+- `text-inverse`: `#000000`
 
-- `accent-primary`: `#8B5CF6`  
-  Used for primary CTAs, active states, and signature brand moments.
+#### Accent Colors
+- `accent-primary`: `#00E676`
+  The signature Bags green. Used for primary CTAs, active states, scores, and brand moments.
 
-- `accent-green`: `#22C55E`  
-  Used for growth, momentum, active support, and positive movement.
+- `accent-primary-hover`: `#00C853`
+  Darker green for hover/pressed states.
 
-- `accent-blue`: `#38BDF8`  
-  Used for score/signal/information emphasis.
+- `accent-primary-muted`: `rgba(0, 230, 118, 0.15)`
+  Subtle green tint for backgrounds, badges, and glows.
 
-- `accent-rose`: `#FB7185`  
-  Used for urgency, ending campaigns, or negative movement.
+- `accent-red`: `#FF5252`
+  Used for negative movement, errors, and urgency.
+
+- `accent-amber`: `#FFB300`
+  Used sparingly for warnings or neutral status.
+
+### Light Mode (Optional)
+
+#### Base Colors
+- `bg-primary`: `#FFFFFF`
+- `bg-surface`: `#F7F7F7`
+- `bg-surface-2`: `#EFEFEF`
+- `bg-elevated`: `#FFFFFF`
+- `border-subtle`: `#E5E5E5`
+- `border-strong`: `#D4D4D4`
+
+#### Text Colors
+- `text-primary`: `#0A0A0A`
+- `text-secondary`: `#525252`
+- `text-muted`: `#A3A3A3`
+- `text-inverse`: `#FFFFFF`
+
+#### Accent Colors
+- `accent-primary`: `#16A34A`
+  Deeper green for readability on light backgrounds.
+
+- `accent-primary-hover`: `#15803D`
+
+- `accent-primary-muted`: `rgba(22, 163, 74, 0.1)`
 
 ### Usage Rule
-Do not flood screens with all accent colors at once.
-A screen should usually feel led by one primary accent plus one utility accent.
+Green is the dominant accent. Keep screens monochromatic — black, white, green.
+Use red and amber only for semantic states (errors, warnings). No decorative color variety.
 
 ---
 
