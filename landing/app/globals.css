@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-black: #000000;
+  --color-surface: #060606;
+  --color-surface-2: #0C0C0C;
+  --color-elevated: #141414;
+  --color-border-subtle: #1A1A1A;
+  --color-border-strong: #282828;
+  --color-white: #FFFFFF;
+  --color-gray-300: #D4D4D4;
+  --color-gray-400: #A1A1A1;
+  --color-gray-500: #666666;
+  --color-gray-600: #444444;
+  --color-green: #00E676;
+  --color-green-dark: #00C853;
+  --color-green-muted: rgba(0, 230, 118, 0.12);
+  --color-green-glow: rgba(0, 230, 118, 0.06);
+  --color-red: #FF5252;
+  --font-display: var(--font-syne), sans-serif;
+  --font-mono: var(--font-space-mono), monospace;
+  --font-sans: var(--font-geist-sans);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #282828 #000000;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000000;
+  color: #FFFFFF;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 80px rgba(0, 230, 118, 0.15), 0 0 160px rgba(0, 230, 118, 0.05);
+}
+
+.glow-green-sm {
+  box-shadow: 0 0 40px rgba(0, 230, 118, 0.12), 0 0 80px rgba(0, 230, 118, 0.04);
+}
+
+.glow-green-intense {
+  box-shadow: 0 0 60px rgba(0, 230, 118, 0.25), 0 0 120px rgba(0, 230, 118, 0.1), 0 0 200px rgba(0, 230, 118, 0.05);
+}
+
+/* Text glow */
+.text-glow {
+  text-shadow: 0 0 40px rgba(0, 230, 118, 0.3), 0 0 80px rgba(0, 230, 118, 0.1);
+}
+
+/* Grid pattern */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(0, 230, 118, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 230, 118, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Animated gradient border */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.border-glow {
+  position: relative;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.border-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--angle), transparent 60%, rgba(0, 230, 118, 0.3), transparent 40%);
+  z-index: -1;
+  animation: rotate-border 8s linear infinite;
+}
+
+@keyframes rotate-border {
+  to { --angle: 360deg; }
+}
+
+/* Pulse dot */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Float animation for mascot */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 230, 118, 0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Scanline effect */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
