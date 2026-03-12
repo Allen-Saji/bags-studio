@@ -1,10 +1,10 @@
 # Product Requirements Document
 
-# Momentum OS
+# BagsStudio
 
 ## 1. Summary
 
-Momentum OS is a post-launch growth and loyalty operating system for Bags coins.
+BagsStudio is a post-launch growth and loyalty operating system for Bags coins.
 
 It helps creators sustain momentum after launch by identifying real supporters, launching community campaigns, and rewarding the wallets that actively keep a coin alive.
 
@@ -36,15 +36,15 @@ For supporters and traders, this means:
 - no utility beyond price speculation
 - no reason to stay active in the community
 
-Momentum OS exists to solve this post-launch collapse.
+BagsStudio exists to solve this post-launch collapse.
 
 ---
 
 ## 3. Vision
 
-Turn short-term launch hype into long-term community momentum.
+Turn launch hype into lasting community momentum.
 
-Momentum OS should become the default post-launch layer for Bags coins by helping creators:
+BagsStudio should become the default post-launch layer for Bags coins by helping creators:
 - understand who matters in their community
 - create repeat engagement loops
 - reward the supporters who keep the coin alive
@@ -69,7 +69,7 @@ Momentum OS should become the default post-launch layer for Bags coins by helpin
 
 ## 5. Non-Goals
 
-For v1, Momentum OS will not try to be:
+For v1, BagsStudio will not try to be:
 - a launchpad
 - a generic crypto analytics dashboard
 - a generic social media marketing suite
@@ -105,7 +105,7 @@ A wallet holder or active supporter who wants recognition, rewards, and reasons 
 ## 7. Core Product Thesis
 
 Most products help a coin go live.
-Momentum OS helps a coin stay alive.
+BagsStudio helps a coin stay alive.
 
 ---
 
@@ -122,7 +122,7 @@ Momentum OS helps a coin stay alive.
 
 ## 9. Key Product Concepts
 
-### 9.1 Supporter Score
+### 9.1 Conviction Score
 A dynamic score representing how much a wallet contributes to sustaining a coin after launch.
 
 Potential inputs:
@@ -139,7 +139,7 @@ Potential tier outputs:
 - Catalyst
 - Champion
 
-### 9.2 Momentum Campaigns
+### 9.2 Campaigns
 Creator-defined engagement programs that reward behaviors or supporter segments.
 
 Possible examples:
@@ -148,7 +148,7 @@ Possible examples:
 - milestone unlock campaign
 - community comeback campaign
 
-### 9.3 Momentum Dashboard
+### 9.3 Studio Dashboard
 A creator-facing view of coin health, supporter segments, and active campaigns.
 
 ### 9.4 Supporter-Facing Campaign Page
@@ -183,7 +183,7 @@ A public or semi-public page where supporters can connect wallets and see:
 ### Must Have
 1. Coin selection / connect flow
 2. Creator dashboard for a Bags coin
-3. Supporter Score computation
+3. Conviction Score computation
 4. Supporter leaderboard
 5. One campaign creation flow
 6. Supporter-facing campaign page
@@ -208,7 +208,7 @@ The system must allow a creator to select a Bags coin and view:
 - supporter leaderboard
 - active campaign state
 
-### 12.2 Supporter Score
+### 12.2 Conviction Score
 The system must compute a supporter score for wallets associated with a coin based on defined heuristics.
 
 The system should expose:
@@ -242,7 +242,7 @@ The system must provide creators with a reviewable/exportable list of eligible w
 - Coin
 - Creator
 - Supporter Wallet
-- Supporter Score
+- Conviction Score
 - Campaign
 - Campaign Participant
 - Reward Eligibility Entry
@@ -257,7 +257,7 @@ The system must provide creators with a reviewable/exportable list of eligible w
 
 ## 14. Bags Integration Requirements
 
-Momentum OS must use Bags in a way that feels native and deep.
+BagsStudio must use Bags in a way that feels native and deep.
 
 ### Required Integration Themes
 - coin and creator context from Bags-related surfaces
@@ -298,7 +298,7 @@ The product should feel impossible without Bags, not merely compatible with it.
 ## 16. Demo Plan
 
 ### Demo Sequence
-1. Open Momentum OS
+1. Open BagsStudio
 2. Select a Bags coin
 3. Show dashboard and supporter segmentation
 4. Create a momentum campaign
@@ -308,7 +308,7 @@ The product should feel impossible without Bags, not merely compatible with it.
 8. Return to creator view and show winner list / eligible supporters
 
 ### Demo Message
-“Launch is not enough. Momentum OS gives Bags creators a system for keeping coins alive after launch.”
+“Launch is not enough. BagsStudio gives Bags creators a system for keeping coins alive after launch.”
 
 ---
 
@@ -330,7 +330,7 @@ The product should feel impossible without Bags, not merely compatible with it.
 
 ## 18. Risks
 
-- Supporter Score may become too abstract if not explained clearly
+- Conviction Score may become too abstract if not explained clearly
 - Product may drift into generic dashboard territory if the campaign loop is weak
 - Too many campaign types could slow MVP delivery
 - Shallow Bags usage would weaken hackathon positioning
@@ -359,8 +359,8 @@ The product should feel impossible without Bags, not merely compatible with it.
 
 ## 21. One-Line Positioning
 
-Momentum OS is the post-launch operating system for Bags coins.
+BagsStudio is the post-launch operating system for Bags coins.
 
 ## 22. Short Pitch
 
-Momentum OS helps creators identify real supporters, run momentum campaigns, and reward the wallets that keep a Bags coin alive after launch.
+BagsStudio helps creators identify real supporters, run momentum campaigns, and reward the wallets that keep a Bags coin alive after launch.
