@@ -81,7 +81,7 @@ export default function Home() {
           <div className="flex items-center gap-6">
             <a href="#features" className="hidden text-sm text-gray-500 transition-colors hover:text-white md:block" style={mono}>Features</a>
             <a href="#how-it-works" className="hidden text-sm text-gray-500 transition-colors hover:text-white md:block" style={mono}>How it works</a>
-            <a href="#" className="group relative overflow-hidden rounded-full bg-green px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-green-dark">
+            <a href="/studio" className="group relative overflow-hidden rounded-full bg-green px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-green-dark">
               <span className="relative z-10">Open Studio</span>
             </a>
           </div>
@@ -114,7 +114,7 @@ export default function Home() {
 
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}
                 className="flex flex-col gap-4 sm:flex-row sm:justify-center lg:justify-start">
-                <a href="#" className="glow-green-sm rounded-full bg-green px-8 py-4 text-center text-base font-bold text-black transition-all hover:scale-[1.02]">Open Studio</a>
+                <a href="/studio" className="glow-green-sm rounded-full bg-green px-8 py-4 text-center text-base font-bold text-black transition-all hover:scale-[1.02]">Open Studio</a>
                 <a href="#features" className="rounded-full border border-border-strong px-8 py-4 text-center text-base font-medium text-gray-400 transition-all hover:border-green/30 hover:text-white">Explore Features</a>
               </motion.div>
 
@@ -368,7 +368,7 @@ export default function Home() {
                 Build what comes<br /><span className="text-glow text-green">after launch</span>
               </h2>
               <p className="mx-auto mb-12 max-w-xl text-lg text-gray-500">BagsStudio gives Bags creators the tools to grow community, reward conviction, and keep momentum alive.</p>
-              <a href="#" className="glow-green-intense group relative inline-block overflow-hidden rounded-full bg-green px-10 py-4 text-lg font-bold text-black transition-all hover:scale-[1.03]">
+              <a href="/studio" className="glow-green-intense group relative inline-block overflow-hidden rounded-full bg-green px-10 py-4 text-lg font-bold text-black transition-all hover:scale-[1.03]">
                 <span className="relative z-10">Enter the Studio</span>
               </a>
               <div className="mt-16 flex items-center justify-center gap-3">
