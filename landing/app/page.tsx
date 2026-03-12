@@ -270,32 +270,51 @@ export default function Home() {
         {/* ─── WHY IT MATTERS ─── */}
         <section className="relative overflow-hidden px-6 py-28">
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border-strong to-transparent" />
-          <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green/10 to-transparent" />
-          <div className="relative z-10 mx-auto max-w-5xl text-center">
-            <motion.p {...fadeUp} className="mb-4 text-xs tracking-[0.3em] text-green uppercase" style={mono}>Why It Matters</motion.p>
-            <motion.h2 {...fadeUp} transition={{ duration: 0.5, delay: 0.05 }} className="mb-6 text-4xl font-extrabold tracking-[-0.02em] md:text-5xl lg:text-6xl" style={display}>
-              Launch is a moment.<br /><span className="text-green">Community is the product.</span>
-            </motion.h2>
-            <motion.p {...fadeUp} transition={{ duration: 0.5, delay: 0.1 }} className="mx-auto mb-16 max-w-xl text-lg text-gray-500">
-              The strongest coins don&apos;t just launch well. They keep people engaged after the first spike.
-            </motion.p>
-            <div className="grid gap-6 md:grid-cols-3">
+          <div className="relative z-10 mx-auto max-w-5xl">
+            <div className="text-center">
+              <motion.p {...fadeUp} className="mb-4 text-xs tracking-[0.3em] text-green uppercase" style={mono}>Why It Matters</motion.p>
+              <motion.h2 {...fadeUp} transition={{ duration: 0.5, delay: 0.05 }} className="mb-6 text-4xl font-extrabold tracking-[-0.02em] md:text-5xl lg:text-6xl" style={display}>
+                Launch is a moment.<br /><span className="text-green">Community is the product.</span>
+              </motion.h2>
+              <motion.p {...fadeUp} transition={{ duration: 0.5, delay: 0.1 }} className="mx-auto mb-20 max-w-xl text-lg text-gray-500">
+                The strongest coins don&apos;t just launch well. They keep people engaged after the first spike.
+              </motion.p>
+            </div>
+
+            {/* Transform rows */}
+            <div className="flex flex-col gap-5">
               {transforms.map((t, i) => (
-                <motion.div key={t.from} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.5, delay: i * 0.12 }}
-                  className="rounded-2xl border border-border-subtle bg-surface p-8 text-center transition-all hover:border-green/20">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="rounded-xl border border-border-strong bg-elevated px-6 py-3">
-                      <div className="text-[10px] tracking-widest text-gray-600 uppercase" style={mono}>Before</div>
-                      <div className="mt-1 text-2xl font-extrabold text-gray-500" style={display}>{t.from}</div>
+                <motion.div key={t.from} initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.5, delay: i * 0.12 }}
+                  className="group relative overflow-hidden rounded-2xl border border-border-subtle bg-surface transition-all hover:border-green/20">
+                  <div className="flex items-center">
+                    {/* Left: "From" side */}
+                    <div className="flex flex-1 items-center gap-4 px-8 py-7">
+                      <span className="text-[10px] tracking-widest text-gray-600 uppercase" style={mono}>{String(i + 1).padStart(2, "0")}</span>
+                      <span className="text-2xl font-extrabold text-gray-500 line-through decoration-gray-600/50 md:text-3xl" style={display}>{t.from}</span>
                     </div>
-                    <div className="flex flex-col items-center"><div className="h-6 w-px bg-green/30" />
-                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-green" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+
+                    {/* Arrow */}
+                    <div className="flex items-center gap-3 px-4">
+                      <div className="h-px w-8 bg-gradient-to-r from-gray-600 to-green/60 md:w-16" />
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0 text-green" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                      </svg>
+                      <div className="h-px w-8 bg-gradient-to-r from-green/60 to-green md:w-16" />
                     </div>
-                    <div className="rounded-xl border border-green/20 bg-green-muted px-6 py-3">
-                      <div className="text-[10px] tracking-widest text-green uppercase" style={mono}>After</div>
-                      <div className="text-glow mt-1 text-2xl font-extrabold text-green" style={display}>{t.to}</div>
+
+                    {/* Right: "To" side */}
+                    <div className="flex flex-1 items-center justify-end gap-4 px-8 py-7">
+                      <span className="text-glow text-2xl font-extrabold text-green md:text-3xl" style={display}>{t.to}</span>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-muted">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-green" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Bottom progress accent */}
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-green/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 </motion.div>
               ))}
             </div>
