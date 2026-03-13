@@ -26,3 +26,13 @@ export const CAMPAIGN_TYPES = [
   { value: 'nft_mint', label: 'NFT Mint' },
   { value: 'custom', label: 'Custom' },
 ] as const;
+
+// Bags API endpoint paths (based on official docs)
+export const BAGS_ENDPOINTS = {
+  TOKEN_CREATORS: '/token-launch/creator/v3',
+  TOKEN_CLAIM_STATS: '/token-launch/claim-stats',
+  TOKEN_LIFETIME_FEES: '/token-launch/lifetime-fees',
+  CLAIM_EVENTS: '/fee-share/token/claim-events',
+  ADMIN_LIST: '/fee-share/admin/list',
+  POOL_BY_MINT: '/solana/bags/pools/token-mint',
+} as const;

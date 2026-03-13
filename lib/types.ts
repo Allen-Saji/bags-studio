@@ -1,51 +1,96 @@
-// Bags API types
+// Bags API types (matching official API docs)
 
+// Wrapper for all Bags API responses
+export interface BagsApiResponse<T> {
+  success: boolean;
+  response: T;
+  error?: string;
+}
+
+// From /token-launch/creator/v3
+export interface TokenCreator {
+  username: string;
+  pfp: string;
+  royaltyBps: number;
+  isCreator: boolean;
+  wallet: string;
+  provider: string | null;
+  providerUsername: string | null;
+  twitterUsername: string;
+  bagsUsername: string;
+  isAdmin: boolean;
+}
+
+// From /token-launch/claim-stats
+export interface TokenClaimStat {
+  username: string;
+  pfp: string;
+  royaltyBps: number;
+  isCreator: boolean;
+  wallet: string;
+  provider: string | null;
+  providerUsername: string | null;
+  twitterUsername: string;
+  bagsUsername: string;
+  isAdmin: boolean;
+  totalClaimed: string;
+}
+
+// Combined token metadata we build from on-chain data + Bags creators
 export interface TokenMetadata {
   mint: string;
   name: string;
   symbol: string;
   image: string;
   creator?: string;
+  creators: TokenCreator[];
   description?: string;
 }
 
-export interface FeeShareInfo {
-  tokenMint: string;
-  totalFeesEarned: number;
-  totalClaimed: number;
-  totalUnclaimed: number;
-  claimCount: number;
-  uniqueClaimers: number;
+// From /token-launch/lifetime-fees
+export interface LifetimeFees {
+  totalFeesLamports: string;
 }
 
+// From /solana/bags/pools/token-mint
 export interface PoolInfo {
   tokenMint: string;
-  liquidity: number;
-  volume24h: number;
-  price: number;
-  marketCap: number;
+  dbcConfigKey: string;
+  dbcPoolKey: string;
+  dammV2PoolKey: string | null;
 }
 
+// From /fee-share/token/claim-events
 export interface ClaimEvent {
   wallet: string;
-  amount: number;
+  isCreator: boolean;
+  amount: string; // string in API response
+  signature: string;
   timestamp: string;
-  tokenMint: string;
-  signature?: string;
 }
 
 export interface ClaimEventsResponse {
-  claimEvents: ClaimEvent[];
-  total: number;
-  page: number;
-  pageSize: number;
+  events: ClaimEvent[];
 }
 
-export interface AdminToken {
-  mint: string;
-  name: string;
-  symbol: string;
-  image: string;
+// From /fee-share/admin/list
+export interface AdminListResponse {
+  tokenMints: string[];
+}
+
+// Derived fee-share info for dashboard display
+export interface FeeShareInfo {
+  totalFeesLamports: string;
+  claimStats: TokenClaimStat[];
+  uniqueClaimers: number;
+  totalClaimedLamports: number;
+}
+
+// On-chain token holder from DAS getTokenAccounts
+export interface TokenHolder {
+  wallet: string;
+  balance: number; // raw token amount (before decimals)
+  tokenAccount: string;
 }
 
 // Conviction scoring types
@@ -54,14 +99,12 @@ export interface WalletScore {
   wallet: string;
   score: number;
   tier: ConvictionTier;
-  earlyScore: number;
-  volumeScore: number;
+  balanceScore: number;
+  claimScore: number;
   consistencyScore: number;
-  recencyScore: number;
+  balance: number; // human-readable token balance (after decimals)
   claimCount: number;
-  totalClaimed: number;
-  firstClaimAt: string;
-  lastClaimAt: string;
+  totalClaimed: number; // in lamports
   distinctDays: number;
 }
 
