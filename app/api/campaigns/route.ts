@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabase, getServiceSupabase } from '@/lib/supabase';
+import { validateCampaignInput } from '@/lib/validation';
+import { verifyTokenOwner } from '@/lib/verify-ownership';
 
 export async function GET(request: NextRequest) {
   const supabase = getSupabase();
@@ -26,14 +28,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
   }
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-  const { data, error } = await supabase
+  // Validate input
+  const { valid, errors } = validateCampaignInput(body);
+  if (!valid) {
+    return NextResponse.json({ error: 'Validation failed', errors }, { status: 400 });
+  }
+
+  // Verify wallet owns the token
+  const isOwner = await verifyTokenOwner(
+    body.mint_address as string,
+    body.creator_wallet as string
+  );
+  if (!isOwner) {
+    return NextResponse.json(
+      { error: 'Wallet is not the creator of this token' },
+      { status: 403 }
+    );
+  }
+
+  // Use service key for writes (RLS only allows public reads)
+  const serviceSupabase = getServiceSupabase();
+  if (!serviceSupabase) {
+    return NextResponse.json({ error: 'Service key not configured' }, { status: 503 });
+  }
+
+  const { data, error } = await serviceSupabase
     .from('campaigns')
     .insert({
       mint_address: body.mint_address,
       creator_wallet: body.creator_wallet,
-      name: body.name,
+      name: (body.name as string).trim(),
       type: body.type,
       description: body.description || null,
       tier_threshold: body.tier_threshold,
