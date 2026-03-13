@@ -11,15 +11,20 @@ function Sidebar() {
 
   const links = [
     { href: '/studio', label: 'Coins', icon: '◆' },
+    { href: '/studio/launch', label: 'Launch', icon: '◈' },
   ];
 
   // Extract mint from path if present
   const mintMatch = pathname.match(/^\/studio\/([^/]+)/);
   const mint = mintMatch?.[1];
 
-  if (mint) {
+  if (mint && mint !== 'launch') {
     links.push(
       { href: `/studio/${mint}`, label: 'Dashboard', icon: '▣' },
+      { href: `/studio/${mint}/trade`, label: 'Trade', icon: '⇄' },
+      { href: `/studio/${mint}/quests`, label: 'Quests', icon: '★' },
+      { href: `/studio/${mint}/rewards`, label: 'Rewards', icon: '◎' },
+      { href: `/studio/${mint}/apps`, label: 'Apps', icon: '⊞' },
       { href: `/studio/${mint}/campaigns`, label: 'Campaigns', icon: '⬡' },
     );
   }

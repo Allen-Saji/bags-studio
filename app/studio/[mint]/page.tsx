@@ -6,6 +6,10 @@ import { motion } from 'framer-motion';
 import DashboardHeader from '@/components/studio/DashboardHeader';
 import MomentumCards from '@/components/studio/MomentumCards';
 import ConvictionLeaderboard from '@/components/studio/ConvictionLeaderboard';
+import ClaimableCard from '@/components/studio/ClaimableCard';
+import ReferralCard from '@/components/studio/ReferralCard';
+import ActivityFeed from '@/components/studio/ActivityFeed';
+import EngagementLeaderboard from '@/components/studio/EngagementLeaderboard';
 import Link from 'next/link';
 
 const fetcher = (url: string) => fetch(url).then(r => {
@@ -23,7 +27,13 @@ export default function CreatorDashboard({
   const { data, isLoading, error } = useSWR(
     `/api/dashboard/${mint}`,
     fetcher,
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
+  );
+
+  const { data: leaderboardData } = useSWR(
+    `/api/engage/${mint}/leaderboard`,
+    fetcher,
+    { revalidateOnFocus: false },
   );
 
   if (error) {
@@ -88,17 +98,63 @@ export default function CreatorDashboard({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex gap-3 mb-8"
+        className="flex flex-wrap gap-3 mb-8"
       >
-        <Link
-          href={`/studio/${mint}/campaigns`}
-          className="px-4 py-2 rounded-lg bg-surface-2 border border-border-subtle text-sm text-gray-300 hover:text-green hover:border-green/30 transition-colors"
-        >
-          Campaigns →
-        </Link>
+        {[
+          { href: `/studio/${mint}/trade`, label: 'Trade' },
+          { href: `/studio/${mint}/apps`, label: 'Apps' },
+          { href: `/studio/${mint}/quests`, label: 'Quests' },
+          { href: `/studio/${mint}/rewards`, label: 'Rewards' },
+          { href: `/studio/${mint}/campaigns`, label: 'Campaigns' },
+        ].map(link => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="px-4 py-2 rounded-lg bg-surface-2 border border-border-subtle text-sm text-gray-300 hover:text-green hover:border-green/30 transition-colors"
+          >
+            {link.label} →
+          </Link>
+        ))}
       </motion.div>
 
-      {/* Leaderboard preview */}
+      {/* Claimable fees */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="mb-8"
+      >
+        <ClaimableCard mint={mint} />
+      </motion.div>
+
+      {/* Referral & Activity */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+      >
+        <ReferralCard mint={mint} />
+        <ActivityFeed mint={mint} />
+      </motion.div>
+
+      {/* Engagement Leaderboard */}
+      {leaderboardData?.entries?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mb-8"
+        >
+          <EngagementLeaderboard
+            entries={leaderboardData.entries}
+            total={leaderboardData.total || leaderboardData.entries.length}
+            mint={mint}
+          />
+        </motion.div>
+      )}
+
+      {/* Conviction Leaderboard */}
       {data.scores?.length > 0 ? (
         <ConvictionLeaderboard scores={data.scores} mint={mint} />
       ) : (
