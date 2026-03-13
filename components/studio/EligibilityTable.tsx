@@ -16,9 +16,9 @@ export default function EligibilityTable({ scores, campaign }: EligibilityTableP
   }
 
   const handleExport = () => {
-    const header = 'wallet,score,tier,claims,total_claimed\n';
+    const header = 'wallet,score,tier,balance,claims\n';
     const rows = eligible
-      .map(s => `${s.wallet},${s.score},${s.tier},${s.claimCount},${s.totalClaimed}`)
+      .map(s => `${s.wallet},${s.score},${s.tier},${s.balance},${s.claimCount}`)
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

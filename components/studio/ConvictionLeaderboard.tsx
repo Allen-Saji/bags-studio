@@ -29,11 +29,11 @@ export default function ConvictionLeaderboard({
 
   const handleExportCSV = () => {
     const data = filtered;
-    const header = 'rank,wallet,score,tier,claims,total_claimed,first_claim,last_claim\n';
+    const header = 'rank,wallet,score,tier,balance,claims\n';
     const rows = data
       .map(
         (s, i) =>
-          `${i + 1},${s.wallet},${s.score},${s.tier},${s.claimCount},${s.totalClaimed},${s.firstClaimAt},${s.lastClaimAt}`
+          `${i + 1},${s.wallet},${s.score},${s.tier},${s.balance},${s.claimCount}`
       )
       .join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
@@ -44,6 +44,15 @@ export default function ConvictionLeaderboard({
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (scores.length === 0) {
+    return (
+      <div className="rounded-xl border border-border-subtle p-8 text-center">
+        <p className="text-gray-500 text-sm mb-1">No supporters found</p>
+        <p className="text-gray-600 text-xs">Scores will appear here once holders start claiming fee-shares.</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -104,8 +113,8 @@ export default function ConvictionLeaderboard({
               <th className="px-4 py-3 text-left">Wallet</th>
               <th className="px-4 py-3 text-left">Tier</th>
               <th className="px-4 py-3 text-right">Score</th>
-              <th className="px-4 py-3 text-right hidden md:table-cell">Claims</th>
-              <th className="px-4 py-3 text-right hidden lg:table-cell">Total Claimed</th>
+              <th className="px-4 py-3 text-right hidden md:table-cell">Balance</th>
+              <th className="px-4 py-3 text-right hidden lg:table-cell">Claims</th>
             </tr>
           </thead>
           <tbody>
@@ -130,10 +139,10 @@ export default function ConvictionLeaderboard({
                     {s.score.toFixed(1)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-gray-400 hidden md:table-cell">
-                    {s.claimCount}
+                    {s.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-gray-400 hidden lg:table-cell">
-                    {s.totalClaimed.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    {s.claimCount}
                   </td>
                 </motion.tr>
               );

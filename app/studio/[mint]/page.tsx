@@ -8,7 +8,10 @@ import MomentumCards from '@/components/studio/MomentumCards';
 import ConvictionLeaderboard from '@/components/studio/ConvictionLeaderboard';
 import Link from 'next/link';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+});
 
 export default function CreatorDashboard({
   params,
@@ -17,16 +20,13 @@ export default function CreatorDashboard({
 }) {
   const { mint } = use(params);
 
-  const { data: token, error: tokenError } = useSWR(`/api/bags/token/${mint}`, fetcher);
-  const { data: feeShare } = useSWR(`/api/bags/fee-share/token/${mint}`, fetcher);
-  const { data: pool } = useSWR(`/api/bags/token/${mint}/pool`, fetcher);
-  const { data: scoreData, isLoading: scoresLoading } = useSWR(
-    `/api/score/${mint}`,
+  const { data, isLoading, error } = useSWR(
+    `/api/dashboard/${mint}`,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  if (tokenError) {
+  if (error) {
     return (
       <div className="max-w-2xl mx-auto pt-12 text-center">
         <div className="text-red text-lg mb-2">Token not found</div>
@@ -43,7 +43,7 @@ export default function CreatorDashboard({
     );
   }
 
-  if (!token) {
+  if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center pt-24">
         <div className="w-6 h-6 border-2 border-green/30 border-t-green rounded-full animate-spin" />
@@ -51,15 +51,37 @@ export default function CreatorDashboard({
     );
   }
 
+  // Build token metadata from consolidated response
+  const creator = data.creators?.find((c: { isCreator: boolean }) => c.isCreator);
+  const token = {
+    mint,
+    name: data.token.name || creator?.bagsUsername || mint.slice(0, 8),
+    symbol: data.token.symbol || '',
+    image: data.token.image || creator?.pfp || '',
+    creator: creator?.wallet,
+    creators: data.creators || [],
+    description: data.token.description || '',
+  };
+
+  // Build fee share info
+  const feeShare = data.claimStats?.length ? {
+    totalFeesLamports: data.lifetimeFees || '0',
+    claimStats: data.claimStats,
+    uniqueClaimers: data.claimStats.length,
+    totalClaimedLamports: data.claimStats.reduce(
+      (sum: number, s: { totalClaimed: string }) => sum + parseFloat(s.totalClaimed || '0'),
+      0
+    ),
+  } : null;
+
   return (
     <div>
       <DashboardHeader
         token={token}
-        feeShare={feeShare}
-        totalSupporters={scoreData?.totalSupporters || 0}
+        totalSupporters={data.totalSupporters || 0}
       />
 
-      <MomentumCards feeShare={feeShare} pool={pool} />
+      <MomentumCards feeShare={feeShare} pool={data.pool} />
 
       {/* Quick actions */}
       <motion.div
@@ -69,12 +91,6 @@ export default function CreatorDashboard({
         className="flex gap-3 mb-8"
       >
         <Link
-          href={`/studio/${mint}/supporters`}
-          className="px-4 py-2 rounded-lg bg-surface-2 border border-border-subtle text-sm text-gray-300 hover:text-green hover:border-green/30 transition-colors"
-        >
-          Full Leaderboard →
-        </Link>
-        <Link
           href={`/studio/${mint}/campaigns`}
           className="px-4 py-2 rounded-lg bg-surface-2 border border-border-subtle text-sm text-gray-300 hover:text-green hover:border-green/30 transition-colors"
         >
@@ -83,16 +99,12 @@ export default function CreatorDashboard({
       </motion.div>
 
       {/* Leaderboard preview */}
-      {scoresLoading ? (
-        <div className="rounded-xl border border-border-subtle p-8 text-center">
-          <div className="w-6 h-6 border-2 border-green/30 border-t-green rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Computing conviction scores...</p>
-        </div>
-      ) : scoreData?.scores ? (
-        <ConvictionLeaderboard scores={scoreData.scores} mint={mint} compact />
+      {data.scores?.length > 0 ? (
+        <ConvictionLeaderboard scores={data.scores} mint={mint} />
       ) : (
-        <div className="rounded-xl border border-border-subtle p-8 text-center text-gray-500 text-sm">
-          No claim events found for this token yet.
+        <div className="rounded-xl border border-border-subtle p-8 text-center">
+          <p className="text-gray-500 text-sm mb-1">No supporters yet</p>
+          <p className="text-gray-600 text-xs">No token holders found.</p>
         </div>
       )}
     </div>

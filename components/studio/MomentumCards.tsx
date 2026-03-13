@@ -34,19 +34,22 @@ function StatCard({
 }
 
 export default function MomentumCards({ feeShare, pool }: MomentumCardsProps) {
-  const fmt = (n: number, d = 2) => n.toLocaleString(undefined, { maximumFractionDigits: d });
+  const lifetimeFeesSol = feeShare?.totalFeesLamports
+    ? (parseInt(feeShare.totalFeesLamports) / 1e9)
+    : 0;
+
+  const fmt = (n: number, d = 4) => n.toLocaleString(undefined, { maximumFractionDigits: d });
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <StatCard
-        label="Total Claimed"
-        value={feeShare ? `${fmt(feeShare.totalClaimed)} SOL` : '—'}
-        sub={feeShare ? `${feeShare.claimCount} claims` : undefined}
+        label="Lifetime Fees"
+        value={lifetimeFeesSol > 0 ? `${fmt(lifetimeFeesSol)} SOL` : '—'}
         delay={0}
       />
       <StatCard
-        label="Unclaimed Fees"
-        value={feeShare ? `${fmt(feeShare.totalUnclaimed)} SOL` : '—'}
+        label="Total Claimed"
+        value={feeShare ? `${fmt(feeShare.totalClaimedLamports / 1e9)} SOL` : '—'}
         delay={0.05}
       />
       <StatCard
@@ -55,9 +58,9 @@ export default function MomentumCards({ feeShare, pool }: MomentumCardsProps) {
         delay={0.1}
       />
       <StatCard
-        label="Pool Liquidity"
-        value={pool ? `$${fmt(pool.liquidity, 0)}` : '—'}
-        sub={pool ? `Vol 24h: $${fmt(pool.volume24h, 0)}` : undefined}
+        label="Pool"
+        value={pool ? 'Active' : '—'}
+        sub={pool?.dammV2PoolKey ? 'DAMM v2' : pool?.dbcPoolKey ? 'DBC' : undefined}
         delay={0.15}
       />
     </div>

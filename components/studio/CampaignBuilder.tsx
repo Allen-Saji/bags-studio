@@ -20,6 +20,7 @@ export default function CampaignBuilder({ mint, creatorWallet }: CampaignBuilder
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +31,7 @@ export default function CampaignBuilder({ mint, creatorWallet }: CampaignBuilder
 
     setSubmitting(true);
     setError('');
+    setFieldErrors({});
 
     try {
       const res = await fetch('/api/campaigns', {
@@ -48,6 +50,11 @@ export default function CampaignBuilder({ mint, creatorWallet }: CampaignBuilder
 
       if (!res.ok) {
         const data = await res.json();
+        if (data.errors) {
+          setFieldErrors(data.errors);
+          setSubmitting(false);
+          return;
+        }
         throw new Error(data.error || 'Failed to create campaign');
       }
 
@@ -78,6 +85,7 @@ export default function CampaignBuilder({ mint, creatorWallet }: CampaignBuilder
             placeholder="e.g., Diamond Hands Airdrop"
             className="w-full px-4 py-2.5 rounded-lg bg-surface-2 border border-border-subtle text-white placeholder:text-gray-600 focus:outline-none focus:border-green/50 transition-colors"
           />
+          {fieldErrors.name && <p className="text-xs text-red mt-1">{fieldErrors.name}</p>}
         </div>
 
         {/* Description */}

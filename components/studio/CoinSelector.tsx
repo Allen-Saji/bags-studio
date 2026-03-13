@@ -3,21 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import useSWR from 'swr';
-import { AdminToken } from '@/lib/types';
-
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+import { BAGS_ENDPOINTS } from '@/lib/constants';
 
 export default function CoinSelector() {
   const [mintInput, setMintInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  // Fetch admin tokens for auto-detect
-  const { data: adminTokens } = useSWR<AdminToken[]>('/api/bags/fee-share/admin/list', fetcher, {
-    revalidateOnFocus: false,
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +25,15 @@ export default function CoinSelector() {
 
     setLoading(true);
     try {
-      // Validate by trying to fetch token info
-      const res = await fetch(`/api/bags/token/${mint}`);
+      // Validate by fetching token creators from Bags API
+      const res = await fetch(`/api/bags${BAGS_ENDPOINTS.TOKEN_CREATORS}?tokenMint=${mint}`);
       if (!res.ok) {
+        setError('Token not found on Bags. Make sure this is a valid Bags coin.');
+        setLoading(false);
+        return;
+      }
+      const json = await res.json();
+      if (!json.success || !json.response?.length) {
         setError('Token not found on Bags. Make sure this is a valid Bags coin.');
         setLoading(false);
         return;
@@ -45,10 +43,6 @@ export default function CoinSelector() {
       setError('Failed to validate token. Please try again.');
       setLoading(false);
     }
-  };
-
-  const handleSelectToken = (mint: string) => {
-    router.push(`/studio/${mint}`);
   };
 
   return (
@@ -90,43 +84,6 @@ export default function CoinSelector() {
             <p className="mt-3 text-sm text-red">{error}</p>
           )}
         </div>
-
-        {/* Admin tokens (auto-detect) */}
-        {adminTokens && adminTokens.length > 0 && (
-          <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Your Coins
-            </h3>
-            <div className="grid gap-3">
-              {adminTokens.map(token => (
-                <button
-                  key={token.mint}
-                  onClick={() => handleSelectToken(token.mint)}
-                  className="flex items-center gap-4 p-4 rounded-lg bg-surface-2 border border-border-subtle hover:border-green/30 transition-all group text-left"
-                >
-                  {token.image && (
-                    <img
-                      src={token.image}
-                      alt={token.name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold group-hover:text-green transition-colors">
-                      {token.name}
-                    </div>
-                    <div className="text-xs font-mono text-gray-500 truncate">
-                      {token.mint}
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-500 font-mono">
-                    ${token.symbol}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </motion.div>
     </div>
   );

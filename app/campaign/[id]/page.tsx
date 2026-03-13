@@ -11,17 +11,20 @@ import { Campaign, WalletScore } from '@/lib/types';
 import { TIER_ORDER, TIER_COLORS } from '@/lib/constants';
 import { filterByTier } from '@/lib/conviction';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then(r => {
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+});
 
 function CampaignContent({ id }: { id: string }) {
   const { publicKey, connected } = useWallet();
 
-  const { data: campaign, isLoading: campaignLoading } = useSWR<Campaign>(
+  const { data: campaign, isLoading: campaignLoading, error: campaignError } = useSWR<Campaign>(
     `/api/campaigns/${id}`,
     fetcher
   );
 
-  const { data: scoreData, isLoading: scoresLoading } = useSWR(
+  const { data: scoreData, isLoading: scoresLoading, error: scoresError } = useSWR(
     campaign ? `/api/score/${campaign.mint_address}` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -52,7 +55,7 @@ function CampaignContent({ id }: { id: string }) {
     return eligible.some(e => e.wallet === myScore.wallet);
   }, [myScore, eligible]);
 
-  if (campaignLoading) {
+  if (campaignLoading && !campaignError) {
     return (
       <div className="flex justify-center pt-24">
         <div className="w-6 h-6 border-2 border-green/30 border-t-green rounded-full animate-spin" />
@@ -60,7 +63,7 @@ function CampaignContent({ id }: { id: string }) {
     );
   }
 
-  if (!campaign) {
+  if (!campaign || campaignError) {
     return (
       <div className="text-center pt-24">
         <h1 className="text-2xl font-display font-bold mb-2">Campaign Not Found</h1>
@@ -99,6 +102,11 @@ function CampaignContent({ id }: { id: string }) {
           <p className="text-gray-300 mb-4">Connect your wallet to check eligibility</p>
           <WalletStatus />
         </motion.div>
+      ) : scoresError ? (
+        <div className="text-center p-8 rounded-xl border border-red/20 bg-red/5">
+          <p className="text-red text-sm mb-1">Failed to load scores</p>
+          <p className="text-gray-500 text-xs">Please try again later.</p>
+        </div>
       ) : scoresLoading ? (
         <div className="text-center p-8">
           <div className="w-6 h-6 border-2 border-green/30 border-t-green rounded-full animate-spin mx-auto mb-3" />
@@ -126,20 +134,19 @@ function CampaignContent({ id }: { id: string }) {
               <TierBadge tier={myScore.tier} size="lg" />
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
               {[
-                { label: 'Early', value: myScore.earlyScore },
-                { label: 'Volume', value: myScore.volumeScore },
-                { label: 'Consistency', value: myScore.consistencyScore },
-                { label: 'Recency', value: myScore.recencyScore },
+                { label: 'Balance', value: myScore.balanceScore, max: 50 },
+                { label: 'Claims', value: myScore.claimScore, max: 30 },
+                { label: 'Consistency', value: myScore.consistencyScore, max: 20 },
               ].map(s => (
                 <div key={s.label}>
                   <div className="text-xs text-gray-500">{s.label}</div>
-                  <div className="text-sm font-mono">{s.value.toFixed(1)}/25</div>
+                  <div className="text-sm font-mono">{s.value.toFixed(1)}/{s.max}</div>
                   <div className="mt-1 h-1 rounded-full bg-surface">
                     <div
                       className="h-full rounded-full bg-green"
-                      style={{ width: `${(s.value / 25) * 100}%` }}
+                      style={{ width: `${(s.value / s.max) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -160,7 +167,7 @@ function CampaignContent({ id }: { id: string }) {
       ) : (
         <div className="text-center p-8 rounded-xl border border-border-subtle bg-surface-2">
           <p className="text-gray-400">
-            No claim history found for your wallet on this coin.
+            Your wallet doesn&apos;t hold this token.
           </p>
         </div>
       )}

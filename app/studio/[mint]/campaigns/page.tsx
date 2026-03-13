@@ -15,7 +15,7 @@ export default function CampaignsPage({
 }) {
   const { mint } = use(params);
 
-  const { data: campaigns, isLoading } = useSWR<Campaign[]>(
+  const { data: campaigns, isLoading, error } = useSWR<Campaign[]>(
     `/api/campaigns?mint=${mint}`,
     fetcher
   );
@@ -40,7 +40,12 @@ export default function CampaignsPage({
         </Link>
       </div>
 
-      {isLoading ? (
+      {error ? (
+        <div className="text-center pt-12">
+          <p className="text-red text-sm mb-2">Failed to load campaigns</p>
+          <p className="text-gray-500 text-xs">Check your connection and try again.</p>
+        </div>
+      ) : isLoading ? (
         <div className="flex justify-center pt-12">
           <div className="w-6 h-6 border-2 border-green/30 border-t-green rounded-full animate-spin" />
         </div>

@@ -20,7 +20,6 @@ function Sidebar() {
   if (mint) {
     links.push(
       { href: `/studio/${mint}`, label: 'Dashboard', icon: '▣' },
-      { href: `/studio/${mint}/supporters`, label: 'Supporters', icon: '◎' },
       { href: `/studio/${mint}/campaigns`, label: 'Campaigns', icon: '⬡' },
     );
   }
@@ -28,9 +27,8 @@ function Sidebar() {
   return (
     <aside className="w-56 shrink-0 border-r border-border-subtle bg-surface h-screen sticky top-0 flex flex-col">
       <div className="p-4 border-b border-border-subtle">
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="BagsStudio" className="w-6 h-6" />
-          <span className="font-display font-bold text-sm">BagsStudio</span>
+        <Link href="/">
+          <img src="/logo.png" alt="BagsStudio" className="h-8 w-auto" />
         </Link>
       </div>
       <nav className="flex-1 p-3 space-y-1">
