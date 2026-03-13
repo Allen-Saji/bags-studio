@@ -1,93 +1,105 @@
-import { ClaimEvent, WalletScore, ConvictionTier } from './types';
+import { ClaimEvent, WalletScore, ConvictionTier, TokenHolder } from './types';
 import { TIER_PERCENTILES, TIER_ORDER } from './constants';
 
 interface WalletStats {
   wallet: string;
-  claims: ClaimEvent[];
-  totalClaimed: number;
-  firstClaimAt: Date;
-  lastClaimAt: Date;
-  distinctDays: Set<string>;
+  balance: number; // human-readable (after decimals)
+  claimCount: number;
+  totalClaimed: number; // in lamports
+  distinctDays: number;
 }
 
 function dayKey(ts: string): string {
   return new Date(ts).toISOString().slice(0, 10);
 }
 
-function aggregateByWallet(events: ClaimEvent[]): Map<string, WalletStats> {
-  const map = new Map<string, WalletStats>();
+/**
+ * Compute conviction scores from on-chain holders + optional claim events.
+ *
+ * Scoring breakdown (100 pts total):
+ * - Balance score (50pts): token balance relative to top holder
+ * - Claim score (30pts): total fee-share claimed relative to top claimer
+ * - Consistency score (20pts): distinct claim days relative to most consistent claimer
+ *
+ * If no claim events exist, balance is weighted 100%.
+ */
+export function computeConvictionScores(
+  holders: TokenHolder[],
+  claimEvents: ClaimEvent[],
+  decimals: number = 9,
+): WalletScore[] {
+  if (holders.length === 0) return [];
 
-  for (const e of events) {
-    let stats = map.get(e.wallet);
+  // Build claim stats by wallet
+  const claimMap = new Map<string, { totalClaimed: number; claimCount: number; distinctDays: Set<string> }>();
+  for (const e of claimEvents) {
+    let stats = claimMap.get(e.wallet);
     if (!stats) {
-      stats = {
-        wallet: e.wallet,
-        claims: [],
-        totalClaimed: 0,
-        firstClaimAt: new Date(e.timestamp),
-        lastClaimAt: new Date(e.timestamp),
-        distinctDays: new Set(),
-      };
-      map.set(e.wallet, stats);
+      stats = { totalClaimed: 0, claimCount: 0, distinctDays: new Set() };
+      claimMap.set(e.wallet, stats);
     }
-    stats.claims.push(e);
-    stats.totalClaimed += e.amount;
-    const d = new Date(e.timestamp);
-    if (d < stats.firstClaimAt) stats.firstClaimAt = d;
-    if (d > stats.lastClaimAt) stats.lastClaimAt = d;
+    stats.totalClaimed += typeof e.amount === 'string' ? parseFloat(e.amount) || 0 : e.amount;
+    stats.claimCount++;
     stats.distinctDays.add(dayKey(e.timestamp));
   }
 
-  return map;
-}
+  // Build wallet stats: start from holders, merge claim data
+  const walletStats: WalletStats[] = holders
+    .filter(h => h.balance > 0)
+    .map(h => {
+      const claims = claimMap.get(h.wallet);
+      return {
+        wallet: h.wallet,
+        balance: h.balance / Math.pow(10, decimals),
+        claimCount: claims?.claimCount || 0,
+        totalClaimed: claims?.totalClaimed || 0,
+        distinctDays: claims?.distinctDays.size || 0,
+      };
+    });
 
-export function computeConvictionScores(events: ClaimEvent[]): WalletScore[] {
-  if (events.length === 0) return [];
+  if (walletStats.length === 0) return [];
 
-  const walletMap = aggregateByWallet(events);
-  const wallets = Array.from(walletMap.values());
+  // Global maxima for normalization
+  const maxBalance = Math.max(...walletStats.map(w => w.balance), 1);
+  const maxClaimed = Math.max(...walletStats.map(w => w.totalClaimed), 1);
+  const maxDays = Math.max(...walletStats.map(w => w.distinctDays), 1);
 
-  // Find global extremes
-  const allTimestamps = events.map(e => new Date(e.timestamp).getTime());
-  const earliestGlobal = Math.min(...allTimestamps);
-  const latestGlobal = Math.max(...allTimestamps);
-  const timeSpan = latestGlobal - earliestGlobal || 1;
-  const now = Date.now();
-
-  const maxClaimed = Math.max(...wallets.map(w => w.totalClaimed), 1);
-  const maxDays = Math.max(...wallets.map(w => w.distinctDays.size), 1);
+  const hasClaims = claimEvents.length > 0;
 
   // Score each wallet
-  const scored: WalletScore[] = wallets.map(w => {
-    // Early score (25pts): how early first claim was relative to token age
-    const earlyRatio = 1 - (w.firstClaimAt.getTime() - earliestGlobal) / timeSpan;
-    const earlyScore = earlyRatio * 25;
+  const scored: WalletScore[] = walletStats.map(w => {
+    // Balance score: log-scaled to reduce whale dominance
+    const balanceRatio = Math.log10(w.balance + 1) / Math.log10(maxBalance + 1);
 
-    // Volume score (25pts): total claimed normalized to max claimer
-    const volumeScore = (w.totalClaimed / maxClaimed) * 25;
+    let balanceScore: number;
+    let claimScore: number;
+    let consistencyScore: number;
 
-    // Consistency (25pts): distinct active days normalized to max
-    const consistencyScore = (w.distinctDays.size / maxDays) * 25;
+    if (hasClaims) {
+      // With claims: 50/30/20 split
+      balanceScore = balanceRatio * 50;
+      claimScore = (w.totalClaimed / maxClaimed) * 30;
+      consistencyScore = (w.distinctDays / maxDays) * 20;
+    } else {
+      // No claims: balance is everything
+      balanceScore = balanceRatio * 100;
+      claimScore = 0;
+      consistencyScore = 0;
+    }
 
-    // Recency score (25pts): decays with days since last claim
-    const daysSinceLast = (now - w.lastClaimAt.getTime()) / (1000 * 60 * 60 * 24);
-    const recencyScore = Math.max(0, 25 * Math.exp(-daysSinceLast / 30));
-
-    const score = earlyScore + volumeScore + consistencyScore + recencyScore;
+    const score = balanceScore + claimScore + consistencyScore;
 
     return {
       wallet: w.wallet,
       score: Math.round(score * 100) / 100,
       tier: 'OG' as ConvictionTier, // assigned below
-      earlyScore: Math.round(earlyScore * 100) / 100,
-      volumeScore: Math.round(volumeScore * 100) / 100,
+      balanceScore: Math.round(balanceScore * 100) / 100,
+      claimScore: Math.round(claimScore * 100) / 100,
       consistencyScore: Math.round(consistencyScore * 100) / 100,
-      recencyScore: Math.round(recencyScore * 100) / 100,
-      claimCount: w.claims.length,
+      balance: Math.round(w.balance * 1000) / 1000,
+      claimCount: w.claimCount,
       totalClaimed: w.totalClaimed,
-      firstClaimAt: w.firstClaimAt.toISOString(),
-      lastClaimAt: w.lastClaimAt.toISOString(),
-      distinctDays: w.distinctDays.size,
+      distinctDays: w.distinctDays,
     };
   });
 
