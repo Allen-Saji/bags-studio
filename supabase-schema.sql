@@ -24,8 +24,11 @@ create table if not exists supporter_scores (
   tier text not null,
   claim_count integer not null default 0,
   total_claimed numeric not null default 0,
-  first_claim_at timestamptz,
-  last_claim_at timestamptz,
+  balance_score numeric not null default 0,
+  claim_score numeric not null default 0,
+  consistency_score numeric not null default 0,
+  balance numeric not null default 0,
+  distinct_days integer not null default 0,
   computed_at timestamptz default now(),
   unique(mint_address, wallet)
 );
