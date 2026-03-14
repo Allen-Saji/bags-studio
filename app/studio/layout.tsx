@@ -11,7 +11,7 @@ function Sidebar() {
 
   const links = [
     { href: '/studio', label: 'Coins', icon: '◆' },
-    { href: '/studio/launch', label: 'Launch', icon: '◈' },
+    // { href: '/studio/launch', label: 'Launch', icon: '◈' }, // v2
   ];
 
   // Extract mint from path if present

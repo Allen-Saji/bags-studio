@@ -13,7 +13,7 @@ export default function Footer() {
             className="h-6 w-auto opacity-50"
           />
           <span className="text-xs text-gray-600">
-            Bags Hackathon 2025
+            Bags Hackathon 2026
           </span>
         </div>
         <div className="flex gap-8">

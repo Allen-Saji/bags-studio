@@ -23,6 +23,27 @@ export const metadata: Metadata = {
   title: "BagsStudio — Post-Launch Creator Studio for Bags Coins",
   description:
     "Turn launch hype into lasting community momentum. Identify real supporters, run campaigns, and reward the wallets keeping your coin alive.",
+  openGraph: {
+    title: "BagsStudio — Post-Launch Creator Studio for Bags Coins",
+    description:
+      "Turn launch hype into lasting community momentum. Identify real supporters, run campaigns, and reward the wallets keeping your coin alive.",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "BagsStudio — Turn launch hype into lasting momentum",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BagsStudio — Post-Launch Creator Studio for Bags Coins",
+    description:
+      "Turn launch hype into lasting community momentum. Identify real supporters, run campaigns, and reward the wallets keeping your coin alive.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({

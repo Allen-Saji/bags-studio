@@ -138,10 +138,6 @@ export default function Home() {
             </motion.div>
           </div>
 
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-            <span className="text-[10px] tracking-widest text-gray-600 uppercase" style={mono}>Scroll</span>
-            <div className="h-8 w-px bg-gradient-to-b from-green/40 to-transparent" />
-          </div>
         </section>
 
         {/* ─── PROBLEM ─── */}
@@ -230,10 +226,8 @@ export default function Home() {
                         {f.tiers.map(t => (
                           <div key={t.name} className="flex items-center gap-3">
                             <div className="h-6 w-1.5 rounded-full bg-green" style={{ opacity: t.opacity }} />
-                            <span className="w-20 text-xs font-bold">{t.name}</span>
+                            <span className="flex-1 text-xs font-bold">{t.name}</span>
                             <span className="text-[10px] text-gray-400" style={mono}>{t.pct}</span>
-                            <div className="flex-1" />
-                            <span className="text-[10px] text-gray-400" style={mono}>{t.count} wallets</span>
                           </div>
                         ))}
                       </div>
@@ -288,6 +282,7 @@ export default function Home() {
                       <div className="flex items-center gap-3">
                         <span className="text-[10px] tracking-widest text-gray-600 uppercase" style={mono}>{String(i + 1).padStart(2, "0")}</span>
                         <span className="text-lg font-extrabold text-gray-400 line-through decoration-gray-500/50" style={display}>{t.from}</span>
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-300" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       </div>
                       <div className="flex items-center gap-2">
                         <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gray-600" stroke="currentColor" strokeWidth={1.5}>
@@ -369,7 +364,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex items-center gap-4">
             <Image src="/logo.png" alt="BagsStudio" width={100} height={26} className="h-6 w-auto opacity-50" />
-            <span className="text-xs text-gray-400">Bags Hackathon 2025</span>
+            <span className="text-xs text-gray-400">Bags Hackathon 2026</span>
           </div>
           <div className="flex gap-8">
             {[{ l: "bags.fm", h: "https://bags.fm" }, { l: "Docs", h: "https://docs.bags.fm" }, { l: "Discord", h: "https://discord.gg/bagsapp" }].map(link => (
