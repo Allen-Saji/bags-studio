@@ -1,61 +1,156 @@
-# BagsStudio
+<p align="center">
+  <img src="public/og.png" alt="BagsStudio" width="100%" />
+</p>
 
-The engagement platform for [Bags](https://bags.fm) coins. Launch tokens, trade, claim fees, run quests, and reward your most active supporters — all without leaving BagsStudio.
+<h1 align="center">BagsStudio</h1>
 
-> **Turn launch hype into lasting community momentum.**
+<p align="center">
+  <strong>The social engagement layer for Bags tokens.</strong><br/>
+  Quests. Referrals. Community walls. Achievement badges. Conviction tiers. Fee rewards.<br/>
+  Everything your token needs to build a real community.
+</p>
 
-## What it does
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#tech-stack">Tech Stack</a> ·
+  <a href="#getting-started">Getting Started</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#roadmap">Roadmap</a>
+</p>
 
-BagsStudio wraps the full Bags experience (launch, trade, claim, apps) and layers an engagement system on top: points, referrals, quests, streaks, and SOL-denominated rewards funded by trading fees.
+---
 
-| Layer | Features |
+## Features
+
+### Community Wall
+Token-gated social feed per token. Only holders can post, anyone can react. Five emoji reactions with optimistic UI. Click any wallet to view their full profile card.
+
+### Gamified Quests (10 types)
+All server-side verified. No client-side cheating.
+
+| Quest Type | Verification |
 |---|---|
-| **Bags Wrapper** | Token launch wizard, swap UI, fee claiming, Bags apps marketplace |
-| **Engagement** | Points system (with 10%/mo decay), referral program, quest builder, holding streaks, activity feed |
-| **Rewards** | Fee-share vault config, weekly epoch distribution, pro-rata SOL claims |
+| Token Balance | On-chain via Solana RPC |
+| Holding Streak | Streak tracker in DB |
+| Trade Volume | Trade logs from platform swaps |
+| Referral Count | Verified referrals table |
+| Hold Duration | Streak tracker in DB |
+| Claim Count | Engagement points ledger |
+| Tier Reached | Leaderboard rank percentile |
+| Complete Quests | Meta: count other completions |
+| Social Share | Manual creator approval |
+| Custom | Manual creator approval |
 
-## Tech stack
+### Achievement Badges
+Six badges auto-awarded when conditions are met:
 
-- **Framework** — [Next.js 16](https://nextjs.org) (App Router, Turbopack)
-- **Database** — [Supabase](https://supabase.com) (PostgreSQL + RLS)
-- **Chain** — [Solana](https://solana.com) mainnet via [Helius](https://helius.dev) RPC
-- **Wallet** — `@solana/wallet-adapter` (Phantom, Solflare)
-- **Styling** — [Tailwind CSS 4](https://tailwindcss.com)
-- **Animations** — [Framer Motion](https://www.framer.com/motion)
-- **Data fetching** — [SWR](https://swr.vercel.app)
-- **Tests** — [Playwright](https://playwright.dev)
+- **OG Holder** : Among the first 100 supporters
+- **Diamond Hands** : 30+ day holding streak
+- **Quest Master** : 5+ quests completed
+- **Evangelist** : 10+ verified referrals
+- **Whale** : Top 1% on leaderboard
+- **Social Butterfly** : 10+ community posts
 
-## Getting started
+### Conviction Scoring
+Five tiers based on balance (50pts), claim consistency (30pts), and claim history (20pts):
+
+| Tier | Percentile | Color |
+|---|---|---|
+| Champion | Top 1% | Gold |
+| Catalyst | Top 5% | Purple |
+| Loyal | Top 15% | Green |
+| Active | Top 40% | Blue |
+| OG | Rest | Gray |
+
+### Fee Rewards
+Trade fees accumulate in a vault wallet via Bags AMM fee-share. Weekly epochs distribute SOL pro-rata based on engagement points. Guided setup flow for creators.
+
+### Referral Engine
+Each holder gets a unique referral link. Referrals are verified on-chain (referred wallet must actually hold the token). Both parties earn points.
+
+### Profile Cards
+Click any wallet on the leaderboard or community wall to see their full profile: tier badge, points breakdown, streak, quest count, referral count, post count, and earned achievement badges.
+
+### Dark/Light Mode
+Full theme toggle with CSS variable indirection for Tailwind v4 compatibility. Persists to localStorage.
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="public/screenshots/landing.png" alt="Landing Page" /></td>
+    <td><img src="public/screenshots/studio.png" alt="Studio Home" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Landing Page</em></td>
+    <td align="center"><em>Studio Home</em></td>
+  </tr>
+  <tr>
+    <td><img src="public/screenshots/dashboard.png" alt="Token Dashboard" /></td>
+    <td><img src="public/screenshots/community.png" alt="Community Wall" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Token Dashboard</em></td>
+    <td align="center"><em>Community Wall</em></td>
+  </tr>
+  <tr>
+    <td><img src="public/screenshots/quests.png" alt="Quests" /></td>
+    <td><img src="public/screenshots/rewards.png" alt="Rewards" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Quests</em></td>
+    <td align="center"><em>Rewards</em></td>
+  </tr>
+</table>
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [Next.js 16](https://nextjs.org) (App Router, Turbopack) |
+| Database | [Supabase](https://supabase.com) (PostgreSQL + RLS) |
+| Chain | [Solana](https://solana.com) mainnet via [Helius](https://helius.dev) RPC |
+| Wallet | `@solana/wallet-adapter` (Phantom, Solflare) |
+| Styling | [Tailwind CSS 4](https://tailwindcss.com) with CSS variable theming |
+| Animations | [Framer Motion](https://www.framer.com/motion) |
+| Data Fetching | [SWR](https://swr.vercel.app) |
+| Testing | [Playwright](https://playwright.dev) |
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- A [Bags API key](https://docs.bags.fm)
-- A [Supabase](https://supabase.com) project
-- A [Helius](https://helius.dev) API key (optional, falls back to public RPC)
+- [Bags API key](https://docs.bags.fm)
+- [Supabase](https://supabase.com) project
+- [Helius](https://helius.dev) API key (optional, falls back to public RPC)
 
 ### Setup
 
 ```bash
-# Clone and install
 git clone https://github.com/your-org/bags-studio.git
 cd bags-studio
 npm install
 
-# Configure environment
 cp .env.example .env
 # Fill in BAGS_API_KEY, SUPABASE_*, HELIUS_API_KEY, CRON_SECRET
 
-# Run the schema migration
-# Copy supabase-schema.sql into the Supabase SQL Editor and execute
+# Run schema migration in Supabase SQL Editor
+# (copy supabase-schema.sql)
 
-# Start dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Environment variables
+### Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
@@ -66,80 +161,93 @@ Open [http://localhost:3000](http://localhost:3000).
 | `SUPABASE_SERVICE_KEY` | Yes | Supabase service role key (server-side writes) |
 | `CRON_SECRET` | Yes | Auth token for cron job endpoints |
 
-## Project structure
-
-```
-app/
-  api/
-    bags/[...path]/     # Bags API proxy (GET + POST)
-    launch/             # Token launch (metadata, config, tx)
-    trade/              # Swap quote + transaction
-    fees/               # Claimable positions + claim txs
-    engage/[mint]/      # Points, referrals, quests, feed, vault, rewards
-    cron/               # Daily streak/points refresh, weekly reward epochs
-    dashboard/[mint]/   # Consolidated dashboard data
-    campaigns/          # Campaign CRUD + eligibility
-    score/[mint]/       # Conviction score computation
-  studio/
-    launch/             # Token launch wizard
-    [mint]/             # Dashboard, trade, quests, rewards, apps, campaigns
-  r/[code]/             # Referral interstitial page
-  campaign/[id]/        # Public campaign view
-
-components/studio/      # Reusable UI components
-lib/                    # Core business logic
-  bags-wrapper.ts       # Bags API helpers (launch, trade, fees)
-  points.ts             # Points ledger + decay + leaderboard
-  referral.ts           # Referral code generation + verification
-  quests.ts             # Quest CRUD + auto-check + submissions
-  streaks.ts            # Holding streak tracking
-  rewards.ts            # Vault config + epoch creation + claims
-  feed.ts               # Activity feed
-  conviction.ts         # Conviction scoring algorithm
-  cache.ts              # In-memory TTL cache
-  score-cache.ts        # Supabase-backed score cache
-```
+---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│              BagsStudio Frontend             │
-│  Launch  Trade  Claim  Apps  Engage          │
-└────────────────┬────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────┐
-│           Next.js API Routes                │
-│  /api/launch  /api/trade  /api/engage       │
-│  /api/fees    /api/cron   /api/dashboard    │
-└──┬──────────┬──────────┬───────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                 BagsStudio Frontend                  │
+│  Landing · Studio · Dashboard · Community · Quests   │
+│  Trade · Rewards · Referrals · Profiles              │
+└───────────────────┬──────────────────────────────────┘
+                    │
+┌───────────────────▼──────────────────────────────────┐
+│              Next.js API Routes (30+)                │
+│  /api/engage/[mint]/community    (posts, reactions)  │
+│  /api/engage/[mint]/quests       (CRUD, check, submit)│
+│  /api/engage/[mint]/profile      (aggregated profile)│
+│  /api/engage/[mint]/referral     (codes, verify)     │
+│  /api/engage/[mint]/rewards      (vault, epochs)     │
+│  /api/trade  /api/launch  /api/fees  /api/cron       │
+└──┬──────────┬──────────┬─────────────────────────────┘
    │          │          │
    ▼          ▼          ▼
- Bags API   Helius    Supabase
- (launch,   (holders,  (points, quests,
-  trade,     metadata)  referrals, feed,
-  fees,                 rewards, streaks)
-  apps)
+ Bags API   Solana     Supabase (15 tables)
+ (launch,   RPC        (points, quests, community,
+  trade,    (balance    referrals, achievements,
+  fees)     verify)     streaks, rewards, feed)
 ```
 
-### Key design decisions
+### Database (15 tables)
 
-- **Non-custodial** — users sign all transactions via wallet adapter; the server never holds keys
-- **Append-only points** — engagement points are an immutable ledger; the leaderboard is a materialized view with decay applied at read time
-- **Complementary to DividendsBot** — DividendsBot handles passive holder rewards, BagsStudio handles active engagement rewards
-- **Referral interstitial** — referral links go to a branded landing page, not directly to Bags
-- **Social quest approval** — social_share and custom quests require manual creator approval; other types are auto-verified
+| Table | Purpose |
+|---|---|
+| `engagement_points` | Append-only points ledger |
+| `engagement_leaderboard` | Materialized leaderboard with decay |
+| `quests` | Creator-defined quests (10 types) |
+| `quest_completions` | One-per-wallet completion records |
+| `quest_submissions` | Proof submissions for approval quests |
+| `community_posts` | Token-gated social wall |
+| `post_reactions` | Emoji reactions on posts |
+| `achievements` | Earned badge records |
+| `referral_codes` | Unique referral codes per wallet |
+| `referrals` | Referral tracking (pending/verified) |
+| `holding_streaks` | Current and longest streaks |
+| `reward_vaults` | Vault config per token |
+| `reward_epochs` | Weekly distribution snapshots |
+| `reward_claims` | Individual pro-rata claims |
+| `trade_logs` | Swap logs for volume tracking |
 
-## Cron jobs
+### Key Design Decisions
 
-Two cron endpoints need to be called on a schedule (e.g. via [Vercel Cron](https://vercel.com/docs/cron-jobs)):
+- **Non-custodial**: Users sign all transactions via wallet adapter. The server never holds keys.
+- **Server-side verification**: Quest completions verified on the server using on-chain data and Solana RPC. No client-trusted values.
+- **Append-only points**: Engagement points are an immutable ledger. The leaderboard is a materialized view with 10%/month decay.
+- **Token-gated posting**: Community wall requires on-chain token balance > 0 to post. Reactions are open to everyone.
+- **On-chain referral verification**: Referrals only verify when the referred wallet actually holds the token, checked via Solana RPC.
 
-| Endpoint | Schedule | What it does |
+---
+
+## Cron Jobs
+
+| Endpoint | Schedule | Purpose |
 |---|---|---|
-| `POST /api/cron/daily-refresh` | Daily | Updates holding streaks, awards daily hold/streak points, refreshes leaderboard ranks |
-| `POST /api/cron/weekly-rewards` | Weekly | Checks vault balances, creates reward epochs with pro-rata distribution |
+| `POST /api/cron/daily-refresh` | Daily | Update streaks, award hold/streak points, refresh leaderboard |
+| `POST /api/cron/weekly-rewards` | Weekly | Check vault balances, create reward epochs |
 
-Both require an `Authorization: Bearer <CRON_SECRET>` header.
+Both require `Authorization: Bearer <CRON_SECRET>`.
+
+---
+
+## Roadmap
+
+### Coming Soon: One-Click Staking
+
+- Creator sets up a staking vault in one click
+- Supporters stake tokens, accumulate weight over time
+- Stake weight = amount x duration
+- Proportional share of trade fees distributed to stakers
+- Staking leaderboard with real-time rankings
+- Auto-compounding rewards
+
+### Formula
+
+```
+your_share = (stake_amount x days_staked) / total_weighted_stake x fee_pool
+```
+
+---
 
 ## Scripts
 
@@ -148,15 +256,7 @@ npm run dev       # Start dev server (Turbopack)
 npm run build     # Production build
 npm run start     # Start production server
 npm run lint      # ESLint
-npx playwright test  # E2E tests
 ```
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feat/my-feature`)
-3. Commit your changes
-4. Open a PR against `main`
 
 ## License
 
@@ -164,4 +264,6 @@ MIT
 
 ---
 
-Built for the [Bags Hackathon](https://bags.fm). Powered by Bags.
+<p align="center">
+  Built for the <a href="https://bags.fm">Bags Hackathon 2026</a>. Powered by Bags.
+</p>
