@@ -1,22 +1,62 @@
 @import "tailwindcss";
 
+/* Base theme variables — overridden by html.light */
+:root {
+  --t-black: #000000;
+  --t-surface: #060606;
+  --t-surface-2: #0C0C0C;
+  --t-elevated: #141414;
+  --t-border-subtle: #1A1A1A;
+  --t-border-strong: #282828;
+  --t-white: #FFFFFF;
+  --t-gray-300: #E0E0E0;
+  --t-gray-400: #B0B0B0;
+  --t-gray-500: #808080;
+  --t-gray-600: #555555;
+  --t-green: #00E676;
+  --t-green-dark: #00C853;
+  --t-green-muted: rgba(0, 230, 118, 0.12);
+  --t-green-glow: rgba(0, 230, 118, 0.06);
+  --t-red: #FF5252;
+}
+
+html.light {
+  --t-black: #FAFAFA;
+  --t-surface: #F5F5F5;
+  --t-surface-2: #EEEEEE;
+  --t-elevated: #E8E8E8;
+  --t-border-subtle: #E0E0E0;
+  --t-border-strong: #CCCCCC;
+  --t-white: #1A1A1A;
+  --t-gray-300: #333333;
+  --t-gray-400: #555555;
+  --t-gray-500: #888888;
+  --t-gray-600: #AAAAAA;
+  --t-green: #00B860;
+  --t-green-dark: #009E50;
+  --t-green-muted: rgba(0, 184, 96, 0.1);
+  --t-green-glow: rgba(0, 184, 96, 0.05);
+  --t-red: #E53935;
+}
+
+/* Tailwind theme — references the overridable vars */
 @theme inline {
-  --color-black: #000000;
-  --color-surface: #060606;
-  --color-surface-2: #0C0C0C;
-  --color-elevated: #141414;
-  --color-border-subtle: #1A1A1A;
-  --color-border-strong: #282828;
-  --color-white: #FFFFFF;
-  --color-gray-300: #D4D4D4;
-  --color-gray-400: #A1A1A1;
-  --color-gray-500: #666666;
-  --color-gray-600: #444444;
-  --color-green: #00E676;
-  --color-green-dark: #00C853;
-  --color-green-muted: rgba(0, 230, 118, 0.12);
-  --color-green-glow: rgba(0, 230, 118, 0.06);
-  --color-red: #FF5252;
+  --color-black: var(--t-black);
+  --color-surface: var(--t-surface);
+  --color-surface-2: var(--t-surface-2);
+  --color-elevated: var(--t-elevated);
+  --color-border-subtle: var(--t-border-subtle);
+  --color-border-strong: var(--t-border-strong);
+  --color-white: var(--t-white);
+  --color-gray-300: var(--t-gray-300);
+  --color-gray-400: var(--t-gray-400);
+  --color-gray-500: var(--t-gray-500);
+  --color-gray-600: var(--t-gray-600);
+  --color-green: var(--t-green);
+  --color-green-dark: var(--t-green-dark);
+  --color-green-muted: var(--t-green-muted);
+  --color-green-glow: var(--t-green-glow);
+  --color-red: var(--t-red);
   --font-display: var(--font-syne), sans-serif;
   --font-mono: var(--font-space-mono), monospace;
   --font-sans: var(--font-geist-sans);
@@ -31,11 +71,20 @@ html {
   scroll-behavior: smooth;
 }
 
+html.light {
+  scrollbar-color: #d4d4d4 #f5f5f5;
+}
+
+html.light img[alt="BagsStudio"] {
+  filter: brightness(0) saturate(100%);
+}
+
 body {
-  background: #000000;
-  color: #FFFFFF;
+  background: var(--color-black);
+  color: var(--color-white);
   font-family: var(--font-sans), system-ui, sans-serif;
   overflow-x: hidden;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 /* Noise texture overlay */
@@ -48,6 +97,7 @@ body::before {
   opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
+
 
 /* Glow effects */
 .glow-green {
