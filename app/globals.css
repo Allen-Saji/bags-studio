@@ -153,6 +153,20 @@ body::before {
   animation: spin 0.8s linear infinite;
 }
 
+/* Horizontal scroll animation for token carousel */
+@keyframes scroll-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-scroll-x {
+  animation: scroll-x 30s linear infinite;
+}
+
+.animate-scroll-x:hover {
+  animation-play-state: paused;
+}
+
 /* Scanline effect */
 .scanlines::after {
   content: '';

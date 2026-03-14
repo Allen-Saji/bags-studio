@@ -59,7 +59,7 @@ export default function CoinSelector() {
             Paste your token&apos;s mint address to view supporter analytics
           </p>
 
-          <form onSubmit={handleSubmit} className="flex gap-3">
+          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               value={mintInput}
@@ -70,7 +70,7 @@ export default function CoinSelector() {
             <button
               type="submit"
               disabled={loading || !mintInput.trim()}
-              className="px-6 py-3 rounded-lg bg-green text-black font-semibold text-sm hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 rounded-lg bg-green text-black font-semibold text-sm hover:bg-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
               {loading ? (
                 <span className="inline-block w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
