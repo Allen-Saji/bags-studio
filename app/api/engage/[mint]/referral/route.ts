@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateReferralCode, getReferralStats } from '@/lib/referral';
+import { getWalletFromAuthOrBody } from '@/lib/auth-session';
 
 export async function POST(
   request: NextRequest,
@@ -7,20 +8,13 @@ export async function POST(
 ) {
   const { mint } = await params;
 
-  let body: { wallet: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  if (!body.wallet) {
-    return NextResponse.json({ error: 'wallet is required' }, { status: 400 });
-  }
+  const authResult = await getWalletFromAuthOrBody(request, mint);
+  if (authResult instanceof Response) return authResult;
+  const { wallet } = authResult;
 
   try {
-    const code = await getOrCreateReferralCode(mint, body.wallet);
-    const stats = await getReferralStats(mint, body.wallet);
+    const code = await getOrCreateReferralCode(mint, wallet);
+    const stats = await getReferralStats(mint, wallet);
     return NextResponse.json({
       code,
       link: `https://bags.studio/r/${code}`,

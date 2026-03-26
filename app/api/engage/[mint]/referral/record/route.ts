@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getReferralCode, createReferral } from '@/lib/referral';
+import { getWalletFromAuthOrBody } from '@/lib/auth-session';
 
 export async function POST(
   request: NextRequest,
@@ -7,15 +8,19 @@ export async function POST(
 ) {
   const { mint } = await params;
 
-  let body: { referred_wallet: string; referral_code: string };
+  const authResult = await getWalletFromAuthOrBody(request, mint);
+  if (authResult instanceof Response) return authResult;
+  const { wallet } = authResult;
+
+  let body: { referral_code: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.referred_wallet || !body.referral_code) {
-    return NextResponse.json({ error: 'referred_wallet and referral_code are required' }, { status: 400 });
+  if (!body.referral_code) {
+    return NextResponse.json({ error: 'referral_code is required' }, { status: 400 });
   }
 
   try {
@@ -27,7 +32,7 @@ export async function POST(
     const referral = await createReferral(
       mint,
       codeData.wallet,
-      body.referred_wallet,
+      wallet,
       body.referral_code,
     );
 

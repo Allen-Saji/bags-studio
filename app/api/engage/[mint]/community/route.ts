@@ -3,6 +3,7 @@ import { getPosts, createPost } from '@/lib/community';
 import { getSplTokenBalance } from '@/lib/solana-rpc';
 import { awardPoints } from '@/lib/points';
 import { MAX_POST_LENGTH, POINTS_COMMUNITY_POST } from '@/lib/constants';
+import { getWalletFromAuthOrBody } from '@/lib/auth-session';
 
 export async function GET(
   request: NextRequest,
@@ -22,15 +23,20 @@ export async function POST(
 ) {
   const { mint } = await params;
 
-  let body: { wallet: string; content: string };
+  // Authenticate: session wallet or fallback to wallet-adapter
+  const authResult = await getWalletFromAuthOrBody(request, mint);
+  if (authResult instanceof Response) return authResult;
+  const { wallet } = authResult;
+
+  let body: { content: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.wallet || !body.content?.trim()) {
-    return NextResponse.json({ error: 'wallet and content are required' }, { status: 400 });
+  if (!body.content?.trim()) {
+    return NextResponse.json({ error: 'content is required' }, { status: 400 });
   }
 
   if (body.content.length > MAX_POST_LENGTH) {
@@ -38,18 +44,18 @@ export async function POST(
   }
 
   // Check token holder
-  const balance = await getSplTokenBalance(body.wallet, mint);
+  const balance = await getSplTokenBalance(wallet, mint);
   if (balance <= 0) {
     return NextResponse.json({ error: 'You must hold this token to post' }, { status: 403 });
   }
 
-  const post = await createPost(mint, body.wallet, body.content.trim());
+  const post = await createPost(mint, wallet, body.content.trim());
   if (!post) {
     return NextResponse.json({ error: 'Failed to create post' }, { status: 500 });
   }
 
   // Award points for posting (non-blocking)
-  awardPoints(mint, body.wallet, POINTS_COMMUNITY_POST, 'quest', post.id).catch(() => {});
+  awardPoints(mint, wallet, POINTS_COMMUNITY_POST, 'quest', post.id).catch(() => {});
 
   return NextResponse.json(post, { status: 201 });
 }

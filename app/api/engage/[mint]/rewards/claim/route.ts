@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { markRewardClaimed } from '@/lib/rewards';
+import { requireAuth } from '@/lib/auth-session';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ mint: string }> }
 ) {
   const { mint } = await params;
+
+  // Require authentication — reward claiming must be authenticated
+  const authResult = await requireAuth(mint);
+  if (authResult instanceof Response) return authResult;
 
   let body: { claim_id: string; signature: string };
   try {
