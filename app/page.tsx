@@ -165,15 +165,7 @@ export default function Home() {
                 <a href="#features" className="rounded-full border border-border-strong px-8 py-4 text-center text-base font-medium text-gray-300 transition-all hover:border-green/30 hover:text-white">See What&apos;s Inside</a>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.6 }}
-                className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-border-subtle pt-8">
-                {platformStats.map(s => (
-                  <div key={s.label} className="text-center lg:text-left">
-                    <div className="text-2xl font-extrabold text-green" style={mono}>{s.value}</div>
-                    <div className="mt-1 text-xs text-gray-400">{s.label}</div>
-                  </div>
-                ))}
-              </motion.div>
+              {/* stats removed — covered in features section */}
             </div>
 
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.3 }}
@@ -186,20 +178,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── LIVE PREVIEW STRIP ─── */}
-        <section className="relative px-6 py-12">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green/20 to-transparent" />
-          <div className="mx-auto max-w-6xl">
-            <motion.div {...fadeUp} className="flex flex-wrap items-center justify-center gap-3 text-xs" style={mono}>
-              {["Community Wall", "10 Quests", "On-Chain Vault", "Staking", "Token Locks", "Merkle Rewards", "Referrals", "Conviction Tiers", "6 Badges", "Social Auth"].map((item, i) => (
-                <motion.span key={item} initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.04 }}
-                  className="rounded-full border border-green/20 bg-green/[0.06] px-4 py-2 text-green">
-                  {item}
-                </motion.span>
-              ))}
-            </motion.div>
-          </div>
-        </section>
+        {/* strip removed — repetitive with features */}
 
         {/* ─── FEATURES ─── */}
         <section id="features" className="relative px-6 py-28">
