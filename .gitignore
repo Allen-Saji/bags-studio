@@ -49,3 +49,7 @@ target/types/
 
 # claude
 CLAUDE.md
+
+# remotion
+remotion/
+out/
