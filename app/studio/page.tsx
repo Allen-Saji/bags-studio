@@ -80,14 +80,10 @@ export default function StudioPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="mb-1">
           <h1 className="text-2xl sm:text-3xl font-display font-bold">
             Welcome to <span className="text-green">BagsStudio</span>
           </h1>
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-green/20 bg-green/5">
-            <span className="inline-block h-2 w-2 rounded-full bg-green animate-pulse-dot" />
-            <span className="text-[10px] text-green font-mono uppercase tracking-wider">Network Live</span>
-          </div>
         </div>
         <p className="text-gray-400 text-sm mb-4">
           The creator studio for post-launch community growth. Analyze, engage, and reward your supporters.
