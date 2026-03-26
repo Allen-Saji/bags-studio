@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { WalletContextProvider } from '@/lib/wallet-context';
 import { ThemeProvider } from '@/lib/theme-context';
 import WalletStatus from '@/components/studio/WalletStatus';
+import AuthStatus from '@/components/studio/AuthStatus';
 import ThemeToggle from '@/components/studio/ThemeToggle';
 
 function Sidebar() {
@@ -152,7 +153,7 @@ function Header() {
       )}
       <div className="flex items-center gap-2 sm:gap-3">
         <ThemeToggle />
-        <WalletStatus />
+        <AuthStatus />
       </div>
     </header>
   );
