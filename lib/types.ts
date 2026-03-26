@@ -152,7 +152,7 @@ export interface CoinRecord {
 
 // Engagement types
 
-export type PointSource = 'hold' | 'claim' | 'referral' | 'quest' | 'streak';
+export type PointSource = 'hold' | 'claim' | 'referral' | 'quest' | 'streak' | 'stake';
 export type QuestType = 'hold_duration' | 'claim_count' | 'referral_count' | 'social_share' | 'custom' | 'token_balance' | 'trade_volume' | 'streak' | 'tier_reached' | 'meta';
 export type ReferralStatus = 'pending' | 'verified';
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
@@ -177,6 +177,7 @@ export interface EngagementLeaderboardEntry {
   quest_points: number;
   streak_points: number;
   hold_points: number;
+  stake_points: number;
   rank: number;
   updated_at: string;
 }
@@ -258,6 +259,9 @@ export interface RewardVault {
   total_claimed: number;
   total_distributed: number;
   created_at: string;
+  vault_state_pda?: string;
+  treasury_pda?: string;
+  on_chain?: boolean;
 }
 
 export interface RewardEpoch {
@@ -332,4 +336,30 @@ export interface UserProfile {
   referral_count: number;
   post_count: number;
   achievements: Achievement[];
+}
+
+// Staking types
+
+export interface StakePosition {
+  mint_address: string;
+  wallet: string;
+  amount: number;
+  staked_at: string | null;
+  last_points_claim_ts: string | null;
+  stake_pool_pda: string;
+  user_stake_pda: string;
+  updated_at: string;
+}
+
+export interface TokenLockRecord {
+  id: string;
+  mint_address: string;
+  creator_wallet: string;
+  lock_index: number;
+  amount: number;
+  lock_start: string;
+  lock_end: string;
+  released: boolean;
+  token_lock_pda: string;
+  created_at: string;
 }

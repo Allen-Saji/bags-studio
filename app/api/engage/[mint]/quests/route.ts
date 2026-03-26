@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getQuests, createQuest } from '@/lib/quests';
-import { verifyTokenOwner } from '@/lib/verify-ownership';
+import { requireRole } from '@/lib/auth-session';
 
 export async function GET(
   request: NextRequest,
@@ -24,8 +24,12 @@ export async function POST(
 ) {
   const { mint } = await params;
 
+  // Require creator or admin role — quest creation is privileged
+  const authResult = await requireRole(mint, 'admin');
+  if (authResult instanceof Response) return authResult;
+  const wallet = authResult.wallet;
+
   let body: {
-    creator_wallet: string;
     title: string;
     description?: string;
     quest_type: string;
@@ -41,17 +45,12 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.creator_wallet || !body.title || !body.quest_type || !body.points_reward) {
+  if (!body.title || !body.quest_type || !body.points_reward) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
   try {
-    const isOwner = await verifyTokenOwner(mint, body.creator_wallet);
-    if (!isOwner) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
-    }
-
-    const quest = await createQuest(mint, body.creator_wallet, body);
+    const quest = await createQuest(mint, wallet || '', body);
     return NextResponse.json(quest, { status: 201 });
   } catch (err) {
     console.error('Create quest error:', err);

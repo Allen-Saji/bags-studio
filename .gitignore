@@ -40,3 +40,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# anchor / solana build artifacts
+programs/reward-vault/target/
+target/deploy/
+target/idl/
+target/types/
+.anchor/
+
+# claude
+CLAUDE.md
+
+# remotion
+remotion/
+out/

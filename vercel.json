@@ -1,0 +1,17 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/daily-refresh",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-rewards",
+      "schedule": "0 7 * * 1"
+    }
+  ]
+}

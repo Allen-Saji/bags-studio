@@ -2,12 +2,13 @@
 
 import { use, useState, useCallback } from 'react';
 import useSWR from 'swr';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import SubmissionReview from '@/components/studio/SubmissionReview';
 import { Quest } from '@/lib/types';
-import { QUEST_TYPES, TIER_ORDER } from '@/lib/constants';
+import { QUEST_TYPES } from '@/lib/constants';
+import { useTokenRole } from '@/lib/use-token-role';
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error(`${r.status}`);
@@ -50,10 +51,11 @@ export default function QuestDetailPage({
   params: Promise<{ mint: string; id: string }>;
 }) {
   const { mint, id } = use(params);
-  const { publicKey } = useWallet();
-  const wallet = publicKey?.toBase58();
+  const router = useRouter();
+  const { isCreator, wallet, role } = useTokenRole(mint);
 
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [proofUrl, setProofUrl] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -64,18 +66,12 @@ export default function QuestDetailPage({
     fetcher,
   );
 
-  const { data: dashData } = useSWR(`/api/dashboard/${mint}`, fetcher, {
-    revalidateOnFocus: false,
-  });
-
   const quest: Quest | null = questData?.quest || null;
   const submissions = questData?.submissions || [];
   const completed = questData?.completed || false;
   const completionCount = questData?.completionCount || 0;
   const progress = questData?.progress || null;
 
-  const creator = dashData?.creators?.find((c: { isCreator: boolean }) => c.isCreator);
-  const isCreator = wallet && creator?.wallet === wallet;
   const isApprovalType = quest?.requires_approval;
   const isAutoVerifiable = quest && !quest.requires_approval;
 
@@ -89,7 +85,7 @@ export default function QuestDetailPage({
       const res = await fetch(`/api/engage/${mint}/quests/${id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet, proof_url: proofUrl || null }),
+        body: JSON.stringify({ proof_url: proofUrl || null }),
       });
 
       if (!res.ok) {
@@ -117,7 +113,7 @@ export default function QuestDetailPage({
       const res = await fetch(`/api/engage/${mint}/quests/${id}/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet }),
+        body: JSON.stringify({}),
       });
 
       const data = await res.json();
@@ -138,6 +134,22 @@ export default function QuestDetailPage({
     }
   }, [wallet, mint, id, quest, mutate]);
 
+  const handleDelete = useCallback(async () => {
+    if (!confirm('Delete this quest? Existing completions will be kept.')) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/engage/${mint}/quests/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete');
+      }
+      router.push(`/studio/${mint}/quests`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete');
+      setDeleting(false);
+    }
+  }, [mint, id, router]);
+
   if (fetchError) {
     return (
       <div className="max-w-md mx-auto pt-12 text-center">
@@ -157,8 +169,8 @@ export default function QuestDetailPage({
     );
   }
 
-  // Use checkResult if available, otherwise use progress from API
   const displayProgress = checkResult || progress;
+  const isSignedIn = role !== 'visitor' && role !== 'loading';
 
   return (
     <div className="max-w-2xl">
@@ -205,7 +217,6 @@ export default function QuestDetailPage({
             )}
           </div>
 
-          {/* Progress bar for auto-verifiable quests */}
           {displayProgress && displayProgress.current_value >= 0 && !completed && (
             <div className="mt-4">
               <div className="flex items-center justify-between text-xs mb-1.5">
@@ -226,20 +237,33 @@ export default function QuestDetailPage({
           )}
         </div>
 
+        {/* Creator: delete quest */}
+        {isCreator && (
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs font-mono hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            >
+              {deleting ? 'Deleting...' : 'Delete Quest'}
+            </button>
+          </div>
+        )}
+
         {/* Creator: submission review */}
         {isCreator && isApprovalType && (
           <div className="mb-6">
             <SubmissionReview
               submissions={submissions}
               mint={mint}
-              creatorWallet={wallet!}
+              creatorWallet={wallet || ''}
               onReviewed={() => mutate()}
             />
           </div>
         )}
 
         {/* Supporter actions */}
-        {wallet && !isCreator && !completed && (
+        {isSignedIn && !isCreator && !completed && (
           <div className="rounded-xl border border-border-subtle p-5 space-y-4">
             {isAutoVerifiable && (
               <button
@@ -289,9 +313,9 @@ export default function QuestDetailPage({
           </div>
         )}
 
-        {!wallet && (
+        {!isSignedIn && (
           <div className="rounded-xl border border-border-subtle p-5 text-center">
-            <p className="text-sm text-gray-500">Connect your wallet to participate in this quest.</p>
+            <p className="text-sm text-gray-500">Sign in to participate in this quest.</p>
           </div>
         )}
       </motion.div>

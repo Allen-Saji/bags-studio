@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getQuestWithProgress } from '@/lib/quests';
 import { getServiceSupabase } from '@/lib/supabase';
+import { requireRole } from '@/lib/auth-session';
 
 export async function GET(
   request: NextRequest,
@@ -32,4 +33,33 @@ export async function GET(
     console.error('Quest detail error:', err);
     return NextResponse.json({ error: 'Failed to fetch quest' }, { status: 500 });
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ mint: string; id: string }> }
+) {
+  const { mint, id } = await params;
+
+  const authResult = await requireRole(mint, 'admin');
+  if (authResult instanceof Response) return authResult;
+
+  const supabase = getServiceSupabase();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+  }
+
+  // Soft delete: set active = false
+  const { error } = await supabase
+    .from('quests')
+    .update({ active: false })
+    .eq('id', id)
+    .eq('mint_address', mint);
+
+  if (error) {
+    console.error('Delete quest error:', error);
+    return NextResponse.json({ error: 'Failed to delete quest' }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }

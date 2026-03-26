@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { submitQuestProof } from '@/lib/quests';
+import { getWalletFromAuthOrBody } from '@/lib/auth-session';
 
 export async function POST(
   request: NextRequest,
@@ -7,19 +8,23 @@ export async function POST(
 ) {
   const { mint, id } = await params;
 
-  let body: { wallet: string; proof_url: string };
+  const authResult = await getWalletFromAuthOrBody(request, mint);
+  if (authResult instanceof Response) return authResult;
+  const { wallet } = authResult;
+
+  let body: { proof_url: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.wallet || !body.proof_url) {
-    return NextResponse.json({ error: 'wallet and proof_url are required' }, { status: 400 });
+  if (!body.proof_url) {
+    return NextResponse.json({ error: 'proof_url is required' }, { status: 400 });
   }
 
   try {
-    const submission = await submitQuestProof(id, body.wallet, body.proof_url);
+    const submission = await submitQuestProof(id, wallet, body.proof_url);
     return NextResponse.json(submission, { status: 201 });
   } catch (err) {
     console.error('Quest submit error:', err);

@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@remotion/cli": "^4.0.440",
+    "@remotion/tailwind": "^4.0.440",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-wallets": "^0.19.37",
@@ -16,20 +18,30 @@
     "@supabase/supabase-js": "^2.99.1",
     "framer-motion": "^12.35.2",
     "next": "16.1.6",
+    "next-auth": "^5.0.0-beta.30",
     "playwright": "^1.58.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "swr": "^2.4.1"
+    "remotion": "^4.0.440",
+    "swr": "^2.4.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@playwright/test": "^1.58.2",
+    "@solana/spl-token": "^0.4.14",
     "@tailwindcss/postcss": "^4",
+    "@types/bn.js": "^5.2.0",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "chai": "^6.2.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "ts-mocha": "^11.1.0",
     "typescript": "^5"
   }
 }

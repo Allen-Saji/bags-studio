@@ -3,7 +3,7 @@ import { getServiceSupabase } from '@/lib/supabase';
 import { getVault } from '@/lib/rewards';
 import { createEpoch } from '@/lib/rewards';
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -63,3 +63,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ results });
 }
+
+export const GET = handler;
+export const POST = handler;
