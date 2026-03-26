@@ -74,3 +74,118 @@ pub struct ClaimStatusClosed {
     pub claimant: Pubkey,
     pub epoch: u64,
 }
+
+// ============================
+// STAKING ACCOUNTS
+// ============================
+
+#[account]
+pub struct StakePool {
+    pub admin: Pubkey,
+    pub token_mint: Pubkey,
+    pub total_staked: u64,
+    pub min_stake_amount: u64,
+    pub points_per_token_per_day: u64,
+    pub stake_pool_bump: u8,
+    pub token_decimals: u8,
+}
+
+impl StakePool {
+    pub const LEN: usize = 32 + 32 + 8 + 8 + 8 + 1 + 1; // 90 bytes
+}
+
+#[account]
+pub struct UserStake {
+    pub owner: Pubkey,
+    pub stake_pool: Pubkey,
+    pub amount: u64,
+    pub staked_at: i64,
+    pub last_points_claim_ts: i64,
+    pub user_stake_bump: u8,
+}
+
+impl UserStake {
+    pub const LEN: usize = 32 + 32 + 8 + 8 + 8 + 1; // 89 bytes
+}
+
+// ============================
+// TOKEN LOCK ACCOUNTS
+// ============================
+
+#[account]
+pub struct TokenLock {
+    pub creator: Pubkey,
+    pub token_mint: Pubkey,
+    pub amount: u64,
+    pub lock_start: i64,
+    pub lock_end: i64,
+    pub lock_index: u8,
+    pub released: bool,
+    pub token_lock_bump: u8,
+}
+
+impl TokenLock {
+    pub const LEN: usize = 32 + 32 + 8 + 8 + 8 + 1 + 1 + 1; // 91 bytes
+}
+
+// ============================
+// STAKING EVENTS
+// ============================
+
+#[event]
+pub struct StakePoolInitialized {
+    pub pool: Pubkey,
+    pub admin: Pubkey,
+    pub token_mint: Pubkey,
+    pub min_stake: u64,
+    pub points_rate: u64,
+}
+
+#[event]
+pub struct TokensStaked {
+    pub pool: Pubkey,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub total_staked: u64,
+}
+
+#[event]
+pub struct TokensUnstaked {
+    pub pool: Pubkey,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub total_staked: u64,
+}
+
+#[event]
+pub struct StakePositionClosed {
+    pub pool: Pubkey,
+    pub user: Pubkey,
+}
+
+// ============================
+// LOCK EVENTS
+// ============================
+
+#[event]
+pub struct LockCreated {
+    pub lock: Pubkey,
+    pub creator: Pubkey,
+    pub token_mint: Pubkey,
+    pub amount: u64,
+    pub lock_end: i64,
+    pub lock_index: u8,
+}
+
+#[event]
+pub struct LockExtended {
+    pub lock: Pubkey,
+    pub new_lock_end: i64,
+}
+
+#[event]
+pub struct LockReleased {
+    pub lock: Pubkey,
+    pub creator: Pubkey,
+    pub amount: u64,
+}

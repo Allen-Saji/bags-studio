@@ -28,4 +28,25 @@ pub enum RewardVaultError {
 
     #[msg("Arithmetic overflow")]
     ArithmeticOverflow,
+
+    #[msg("Stake amount below minimum")]
+    BelowMinStake,
+
+    #[msg("Insufficient staked balance")]
+    InsufficientStake,
+
+    #[msg("Lock has not expired yet")]
+    LockNotExpired,
+
+    #[msg("Lock already released")]
+    AlreadyReleased,
+
+    #[msg("Extension must increase lock duration")]
+    InvalidExtension,
+
+    #[msg("Lock index out of range (max 10)")]
+    InvalidLockIndex,
+
+    #[msg("Stake position is not empty — unstake first")]
+    StakeNotEmpty,
 }
