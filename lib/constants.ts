@@ -51,6 +51,7 @@ export const POINTS_REFERRER = 50;
 export const POINTS_REFERRED = 25;
 export const STREAK_BONUS_POINTS = 5;
 export const DECAY_RATE = 0.9; // 10% per month
+export const STAKE_POINTS_PER_TOKEN_PER_DAY = 1;
 export const REFERRAL_CODE_LENGTH = 8;
 
 export const QUEST_TYPES = [
