@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
-use crate::state::{VaultState, ClaimStatus};
+use crate::state::{VaultState, ClaimStatus, ClaimStatusClosed};
 use crate::error::RewardVaultError;
 
 #[derive(Accounts)]
 pub struct CloseClaimStatus<'info> {
     #[account(
         seeds = [b"vault_state", vault_state.token_mint.as_ref()],
-        bump,
+        bump = vault_state.vault_state_bump,
     )]
     pub vault_state: Account<'info, VaultState>,
 
@@ -29,7 +29,7 @@ pub struct CloseClaimStatus<'info> {
     #[account(mut)]
     pub claimant: SystemAccount<'info>,
 
-    /// Anyone can call this — permissionless cleanup
+    /// Anyone can call this — permissionless cleanup after epoch ends
     pub caller: Signer<'info>,
 }
 
@@ -38,23 +38,19 @@ pub fn handler(ctx: Context<CloseClaimStatus>) -> Result<()> {
     let claim = &ctx.accounts.claim_status;
     let clock = Clock::get()?;
 
-    // Can only close after the epoch has ended
+    // Can only close claims from completed epochs
+    // Either the epoch is in the past, or the current epoch's end time has passed
     require!(
-        clock.unix_timestamp >= vault.epoch_ends_at,
+        claim.claim_epoch < vault.current_epoch
+            || (claim.claim_epoch == vault.current_epoch && clock.unix_timestamp >= vault.epoch_ends_at),
         RewardVaultError::EpochNotEnded
     );
 
-    // The claim must be from a past epoch (not the current one if it hasn't ended)
-    require!(
-        claim.claim_epoch < vault.current_epoch || clock.unix_timestamp >= vault.epoch_ends_at,
-        RewardVaultError::EpochNotEnded
-    );
-
-    msg!(
-        "Closed claim status for epoch {}, refunding rent to {}",
-        claim.claim_epoch,
-        claim.claimant
-    );
+    emit!(ClaimStatusClosed {
+        vault: ctx.accounts.vault_state.key(),
+        claimant: claim.claimant,
+        epoch: claim.claim_epoch,
+    });
 
     Ok(())
 }

@@ -6,6 +6,8 @@ pub struct VaultState {
     pub admin: Pubkey,
     /// The token mint this vault distributes rewards for
     pub token_mint: Pubkey,
+    /// Bump seed for the vault_state PDA itself
+    pub vault_state_bump: u8,
     /// Bump seed for the treasury PDA
     pub treasury_bump: u8,
     /// Current merkle root for reward claims
@@ -21,7 +23,7 @@ pub struct VaultState {
 }
 
 impl VaultState {
-    pub const LEN: usize = 32 + 32 + 1 + 32 + 8 + 8 + 8 + 8; // 129 bytes
+    pub const LEN: usize = 32 + 32 + 1 + 1 + 32 + 8 + 8 + 8 + 8; // 130 bytes
 }
 
 #[account]
@@ -38,4 +40,37 @@ pub struct ClaimStatus {
 
 impl ClaimStatus {
     pub const LEN: usize = 1 + 8 + 32 + 8; // 49 bytes
+}
+
+// --- Events ---
+
+#[event]
+pub struct VaultInitialized {
+    pub vault: Pubkey,
+    pub admin: Pubkey,
+    pub token_mint: Pubkey,
+    pub treasury: Pubkey,
+}
+
+#[event]
+pub struct DistributionUpdated {
+    pub vault: Pubkey,
+    pub epoch: u64,
+    pub merkle_root: [u8; 32],
+    pub total_distribution: u64,
+}
+
+#[event]
+pub struct RewardClaimed {
+    pub vault: Pubkey,
+    pub claimant: Pubkey,
+    pub amount: u64,
+    pub epoch: u64,
+}
+
+#[event]
+pub struct ClaimStatusClosed {
+    pub vault: Pubkey,
+    pub claimant: Pubkey,
+    pub epoch: u64,
 }

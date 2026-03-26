@@ -22,4 +22,10 @@ pub enum RewardVaultError {
 
     #[msg("Proof exceeds maximum depth")]
     ProofTooLong,
+
+    #[msg("Claim amount must be greater than zero")]
+    ZeroAmount,
+
+    #[msg("Arithmetic overflow")]
+    ArithmeticOverflow,
 }

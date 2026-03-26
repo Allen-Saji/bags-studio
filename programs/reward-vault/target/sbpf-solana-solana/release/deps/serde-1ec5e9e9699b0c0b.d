@@ -1,0 +1,14 @@
+/home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/deps/serde-1ec5e9e9699b0c0b.d: /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/build/serde-8779ffd8d07976c5/out/private.rs
+
+/home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/deps/libserde-1ec5e9e9699b0c0b.rlib: /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/build/serde-8779ffd8d07976c5/out/private.rs
+
+/home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/deps/libserde-1ec5e9e9699b0c0b.rmeta: /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/build/serde-8779ffd8d07976c5/out/private.rs
+
+/home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/allen/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/build/serde-8779ffd8d07976c5/out/private.rs:
+
+# env-dep:OUT_DIR=/home/allen/bags-studio/programs/reward-vault/target/sbpf-solana-solana/release/build/serde-8779ffd8d07976c5/out

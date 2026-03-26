@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::state::{VaultState, ClaimStatus};
+use crate::state::{VaultState, ClaimStatus, RewardClaimed};
 use crate::error::RewardVaultError;
 use crate::merkle_proof::{verify, compute_leaf, MAX_PROOF_DEPTH};
 
@@ -8,12 +8,11 @@ use crate::merkle_proof::{verify, compute_leaf, MAX_PROOF_DEPTH};
 pub struct Claim<'info> {
     #[account(
         seeds = [b"vault_state", vault_state.token_mint.as_ref()],
-        bump,
+        bump = vault_state.vault_state_bump,
     )]
     pub vault_state: Account<'info, VaultState>,
 
     /// The treasury PDA holding SOL — lamports will be deducted
-    /// CHECK: Verified via seeds constraint — this is the program-owned treasury PDA.
     #[account(
         mut,
         seeds = [b"treasury", vault_state.token_mint.as_ref()],
@@ -43,10 +42,11 @@ pub struct Claim<'info> {
 }
 
 pub fn handler(ctx: Context<Claim>, amount: u64, proof: Vec<[u8; 32]>) -> Result<()> {
+    // Input validation
+    require!(amount > 0, RewardVaultError::ZeroAmount);
     require!(proof.len() <= MAX_PROOF_DEPTH, RewardVaultError::ProofTooLong);
 
     let vault = &ctx.accounts.vault_state;
-    let treasury = &ctx.accounts.treasury;
 
     // Verify merkle proof
     let leaf = compute_leaf(
@@ -58,15 +58,20 @@ pub fn handler(ctx: Context<Claim>, amount: u64, proof: Vec<[u8; 32]>) -> Result
         RewardVaultError::InvalidProof
     );
 
-    // Check treasury has enough SOL
-    let treasury_lamports = treasury.lamports();
+    // Check treasury has enough SOL while maintaining rent exemption
+    let treasury_info = ctx.accounts.treasury.to_account_info();
+    let treasury_lamports = treasury_info.lamports();
+    let rent = Rent::get()?;
+    let min_rent = rent.minimum_balance(0);
+
+    // Treasury must retain enough for rent exemption after transfer
+    let available = treasury_lamports.saturating_sub(min_rent);
     require!(
-        treasury_lamports >= amount,
+        available >= amount,
         RewardVaultError::InsufficientFunds
     );
 
     // Transfer SOL from treasury PDA to claimant via lamport manipulation
-    let treasury_info = ctx.accounts.treasury.to_account_info();
     let claimant_info = ctx.accounts.claimant.to_account_info();
 
     **treasury_info.try_borrow_mut_lamports()? -= amount;
@@ -79,11 +84,12 @@ pub fn handler(ctx: Context<Claim>, amount: u64, proof: Vec<[u8; 32]>) -> Result
     claim_status.claimant = ctx.accounts.claimant.key();
     claim_status.amount = amount;
 
-    msg!(
-        "Claimed {} lamports for epoch {}",
+    emit!(RewardClaimed {
+        vault: ctx.accounts.vault_state.key(),
+        claimant: ctx.accounts.claimant.key(),
         amount,
-        vault.current_epoch
-    );
+        epoch: vault.current_epoch,
+    });
 
     Ok(())
 }
