@@ -32,9 +32,9 @@ pub struct InitializeStakePool<'info> {
         seeds = [b"stake_vault", token_mint.key().as_ref()],
         bump,
     )]
-    pub stake_vault: InterfaceAccount<'info, TokenAccount>,
+    pub stake_vault: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub token_mint: InterfaceAccount<'info, Mint>,
+    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(mut)]
     pub admin: Signer<'info>,

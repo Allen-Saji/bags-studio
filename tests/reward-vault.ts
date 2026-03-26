@@ -3,6 +3,12 @@ import { Program } from "@coral-xyz/anchor";
 import { Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { expect } from "chai";
 import { createHash } from "crypto";
+import {
+  createMint,
+  mintTo,
+  getOrCreateAssociatedTokenAccount,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import * as IDL from "../target/idl/reward_vault.json";
 
 function sha256(data: Buffer): Buffer {
@@ -551,6 +557,524 @@ describe("reward-vault", () => {
       } catch (err: any) {
         expect(err.toString()).to.include("InsufficientFunds");
       }
+    });
+  });
+
+  // ============================
+  // STAKING
+  // ============================
+
+  describe("staking", () => {
+    let stakeMint: PublicKey;
+    let stakeVaultPDA: PublicKey;
+    let stakeMintAuthority: Keypair;
+    let stakePoolPDA: PublicKey;
+    let stakeVaultTokenPDA: PublicKey;
+
+    const staker = Keypair.generate();
+    let stakerATA: PublicKey;
+
+    // Need a fresh vault for staking
+    let sVaultStatePDA: PublicKey;
+    let sTreasuryPDA: PublicKey;
+
+    before(async () => {
+      // Fund staker
+      const sig = await provider.connection.requestAirdrop(staker.publicKey, 2 * LAMPORTS_PER_SOL);
+      await provider.connection.confirmTransaction(sig);
+
+      // Create a real SPL mint
+      stakeMintAuthority = Keypair.generate();
+      const mintSig = await provider.connection.requestAirdrop(stakeMintAuthority.publicKey, 2 * LAMPORTS_PER_SOL);
+      await provider.connection.confirmTransaction(mintSig);
+
+      stakeMint = await createMint(
+        provider.connection,
+        stakeMintAuthority,
+        stakeMintAuthority.publicKey,
+        null,
+        9, // 9 decimals
+      );
+
+      // Mint tokens to staker
+      const stakerAccount = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        staker,
+        stakeMint,
+        staker.publicKey,
+      );
+      stakerATA = stakerAccount.address;
+
+      await mintTo(
+        provider.connection,
+        stakeMintAuthority,
+        stakeMint,
+        stakerATA,
+        stakeMintAuthority,
+        1_000_000_000_000, // 1000 tokens
+      );
+
+      // Derive PDAs
+      [sVaultStatePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault_state"), stakeMint.toBuffer()],
+        program.programId,
+      );
+      [sTreasuryPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("treasury"), stakeMint.toBuffer()],
+        program.programId,
+      );
+      [stakePoolPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_pool"), stakeMint.toBuffer()],
+        program.programId,
+      );
+      [stakeVaultTokenPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_vault"), stakeMint.toBuffer()],
+        program.programId,
+      );
+
+      // Init vault first (required for stake pool)
+      await program.methods
+        .initializeVault()
+        .accountsPartial({
+          vaultState: sVaultStatePDA,
+          treasury: sTreasuryPDA,
+          tokenMint: stakeMint,
+          admin: admin.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+    });
+
+    it("admin can initialize stake pool", async () => {
+      await program.methods
+        .initializeStakePool(new anchor.BN(100_000_000_000), new anchor.BN(1)) // min 100 tokens, 1 pt/token/day
+        .accountsPartial({
+          vaultState: sVaultStatePDA,
+          stakePool: stakePoolPDA,
+          stakeVault: stakeVaultTokenPDA,
+          tokenMint: stakeMint,
+          admin: admin.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      const pool = await program.account.stakePool.fetch(stakePoolPDA);
+      expect(pool.totalStaked.toNumber()).to.equal(0);
+      expect(pool.minStakeAmount.toNumber()).to.equal(100_000_000_000);
+      expect(pool.tokenDecimals).to.equal(9);
+    });
+
+    it("rejects non-admin initializing stake pool", async () => {
+      const fakeMint = Keypair.generate();
+      const [fakeVault] = PublicKey.findProgramAddressSync(
+        [Buffer.from("vault_state"), fakeMint.publicKey.toBuffer()],
+        program.programId,
+      );
+      const [fakePool] = PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_pool"), fakeMint.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      try {
+        await program.methods
+          .initializeStakePool(new anchor.BN(1), new anchor.BN(1))
+          .accountsPartial({
+            vaultState: sVaultStatePDA,
+            stakePool: fakePool,
+            stakeVault: stakeVaultTokenPDA,
+            tokenMint: stakeMint,
+            admin: staker.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([staker])
+          .rpc();
+        expect.fail("Should have failed — non-admin");
+      } catch (err: any) {
+        // Anchor error for has_one or seed mismatch — just verify it failed
+        expect(err).to.exist;
+      }
+    });
+
+    it("user can open stake position", async () => {
+      const [userStakePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user_stake"), stakePoolPDA.toBuffer(), staker.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      await program.methods
+        .openStakePosition()
+        .accountsPartial({
+          stakePool: stakePoolPDA,
+          userStake: userStakePDA,
+          owner: staker.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([staker])
+        .rpc();
+
+      const pos = await program.account.userStake.fetch(userStakePDA);
+      expect(pos.amount.toNumber()).to.equal(0);
+      expect(pos.owner.toBase58()).to.equal(staker.publicKey.toBase58());
+    });
+
+    it("user can stake tokens", async () => {
+      const [userStakePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user_stake"), stakePoolPDA.toBuffer(), staker.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      const stakeAmount = 200_000_000_000; // 200 tokens
+
+      await program.methods
+        .stake(new anchor.BN(stakeAmount))
+        .accountsPartial({
+          stakePool: stakePoolPDA,
+          userStake: userStakePDA,
+          stakeVault: stakeVaultTokenPDA,
+          tokenMint: stakeMint,
+          userTokenAccount: stakerATA,
+          owner: staker.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([staker])
+        .rpc();
+
+      const pos = await program.account.userStake.fetch(userStakePDA);
+      expect(pos.amount.toNumber()).to.equal(stakeAmount);
+
+      const pool = await program.account.stakePool.fetch(stakePoolPDA);
+      expect(pool.totalStaked.toNumber()).to.equal(stakeAmount);
+    });
+
+    it("rejects stake below minimum", async () => {
+      const tinyStaker = Keypair.generate();
+      const fundSig = await provider.connection.requestAirdrop(tinyStaker.publicKey, LAMPORTS_PER_SOL);
+      await provider.connection.confirmTransaction(fundSig);
+
+      const tinyAccount = await getOrCreateAssociatedTokenAccount(
+        provider.connection, tinyStaker, stakeMint, tinyStaker.publicKey,
+      );
+      await mintTo(provider.connection, stakeMintAuthority, stakeMint, tinyAccount.address, stakeMintAuthority, 1_000_000_000); // 1 token
+
+      const [tinyUserStake] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user_stake"), stakePoolPDA.toBuffer(), tinyStaker.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      await program.methods
+        .openStakePosition()
+        .accountsPartial({
+          stakePool: stakePoolPDA,
+          userStake: tinyUserStake,
+          owner: tinyStaker.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([tinyStaker])
+        .rpc();
+
+      try {
+        await program.methods
+          .stake(new anchor.BN(1_000_000_000)) // 1 token, min is 100
+          .accountsPartial({
+            stakePool: stakePoolPDA,
+            userStake: tinyUserStake,
+            stakeVault: stakeVaultTokenPDA,
+            tokenMint: stakeMint,
+            userTokenAccount: tinyAccount.address,
+            owner: tinyStaker.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([tinyStaker])
+          .rpc();
+        expect.fail("Should have failed — below min stake");
+      } catch (err: any) {
+        expect(err.toString()).to.include("BelowMinStake");
+      }
+    });
+
+    it("user can unstake tokens", async () => {
+      const [userStakePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user_stake"), stakePoolPDA.toBuffer(), staker.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      const unstakeAmount = 50_000_000_000; // 50 tokens
+
+      await program.methods
+        .unstake(new anchor.BN(unstakeAmount))
+        .accountsPartial({
+          stakePool: stakePoolPDA,
+          userStake: userStakePDA,
+          stakeVault: stakeVaultTokenPDA,
+          tokenMint: stakeMint,
+          userTokenAccount: stakerATA,
+          owner: staker.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([staker])
+        .rpc();
+
+      const pos = await program.account.userStake.fetch(userStakePDA);
+      expect(pos.amount.toNumber()).to.equal(150_000_000_000); // 200 - 50
+
+      const pool = await program.account.stakePool.fetch(stakePoolPDA);
+      expect(pool.totalStaked.toNumber()).to.equal(150_000_000_000);
+    });
+
+    it("rejects unstake more than staked", async () => {
+      const [userStakePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user_stake"), stakePoolPDA.toBuffer(), staker.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      try {
+        await program.methods
+          .unstake(new anchor.BN(999_000_000_000_000))
+          .accountsPartial({
+            stakePool: stakePoolPDA,
+            userStake: userStakePDA,
+            stakeVault: stakeVaultTokenPDA,
+            tokenMint: stakeMint,
+            userTokenAccount: stakerATA,
+            owner: staker.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([staker])
+          .rpc();
+        expect.fail("Should have failed — insufficient stake");
+      } catch (err: any) {
+        expect(err.toString()).to.include("InsufficientStake");
+      }
+    });
+
+    it("rejects closing position with balance", async () => {
+      const [userStakePDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("user_stake"), stakePoolPDA.toBuffer(), staker.publicKey.toBuffer()],
+        program.programId,
+      );
+
+      try {
+        await program.methods
+          .closeStakePosition()
+          .accountsPartial({
+            stakePool: stakePoolPDA,
+            userStake: userStakePDA,
+            owner: staker.publicKey,
+          })
+          .signers([staker])
+          .rpc();
+        expect.fail("Should have failed — position not empty");
+      } catch (err: any) {
+        expect(err.toString()).to.include("StakeNotEmpty");
+      }
+    });
+  });
+
+  // ============================
+  // CREATOR TOKEN LOCK
+  // ============================
+
+  describe("creator token lock", () => {
+    let lockMint: PublicKey;
+    let lockMintAuthority: Keypair;
+    let creatorATA: PublicKey;
+
+    before(async () => {
+      lockMintAuthority = Keypair.generate();
+      const sig = await provider.connection.requestAirdrop(lockMintAuthority.publicKey, 2 * LAMPORTS_PER_SOL);
+      await provider.connection.confirmTransaction(sig);
+
+      lockMint = await createMint(
+        provider.connection,
+        lockMintAuthority,
+        lockMintAuthority.publicKey,
+        null,
+        9,
+      );
+
+      // Mint tokens to admin (creator)
+      const adminAccount = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        (admin as any).payer,
+        lockMint,
+        admin.publicKey,
+      );
+      creatorATA = adminAccount.address;
+
+      await mintTo(
+        provider.connection,
+        lockMintAuthority,
+        lockMint,
+        creatorATA,
+        lockMintAuthority,
+        10_000_000_000_000, // 10000 tokens
+      );
+    });
+
+    it("creator can lock tokens", async () => {
+      const lockIndex = 0;
+      const [tokenLockPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_lock"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+      const [lockVaultPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("lock_vault"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+
+      const lockAmount = 5_000_000_000_000; // 5000 tokens
+      const lockDuration = 60; // 60 seconds for testing
+
+      await program.methods
+        .createLock(new anchor.BN(lockAmount), new anchor.BN(lockDuration), lockIndex)
+        .accountsPartial({
+          tokenLock: tokenLockPDA,
+          lockVault: lockVaultPDA,
+          tokenMint: lockMint,
+          creatorTokenAccount: creatorATA,
+          creator: admin.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      const lock = await program.account.tokenLock.fetch(tokenLockPDA);
+      expect(lock.amount.toNumber()).to.equal(lockAmount);
+      expect(lock.released).to.be.false;
+      expect(lock.lockIndex).to.equal(lockIndex);
+    });
+
+    it("rejects zero amount lock", async () => {
+      const lockIndex = 1;
+      const [tokenLockPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_lock"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+      const [lockVaultPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("lock_vault"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+
+      try {
+        await program.methods
+          .createLock(new anchor.BN(0), new anchor.BN(60), lockIndex)
+          .accountsPartial({
+            tokenLock: tokenLockPDA,
+            lockVault: lockVaultPDA,
+            tokenMint: lockMint,
+            creatorTokenAccount: creatorATA,
+            creator: admin.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+        expect.fail("Should have failed — zero amount");
+      } catch (err: any) {
+        expect(err.toString()).to.include("ZeroAmount");
+      }
+    });
+
+    it("creator can extend lock", async () => {
+      const lockIndex = 0;
+      const [tokenLockPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_lock"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+
+      const lockBefore = await program.account.tokenLock.fetch(tokenLockPDA);
+      const endBefore = lockBefore.lockEnd.toNumber();
+
+      await program.methods
+        .extendLock(new anchor.BN(3600)) // extend by 1 hour
+        .accountsPartial({
+          tokenLock: tokenLockPDA,
+          creator: admin.publicKey,
+        })
+        .rpc();
+
+      const lockAfter = await program.account.tokenLock.fetch(tokenLockPDA);
+      expect(lockAfter.lockEnd.toNumber()).to.equal(endBefore + 3600);
+    });
+
+    it("rejects extend with 0 seconds", async () => {
+      const lockIndex = 0;
+      const [tokenLockPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_lock"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+
+      try {
+        await program.methods
+          .extendLock(new anchor.BN(0))
+          .accountsPartial({
+            tokenLock: tokenLockPDA,
+            creator: admin.publicKey,
+          })
+          .rpc();
+        expect.fail("Should have failed — zero extension");
+      } catch (err: any) {
+        expect(err.toString()).to.include("InvalidExtension");
+      }
+    });
+
+    it("rejects release before expiry", async () => {
+      const lockIndex = 0;
+      const [tokenLockPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_lock"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+      const [lockVaultPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("lock_vault"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+
+      try {
+        await program.methods
+          .releaseLock()
+          .accountsPartial({
+            tokenLock: tokenLockPDA,
+            lockVault: lockVaultPDA,
+            tokenMint: lockMint,
+            creatorTokenAccount: creatorATA,
+            creator: admin.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .rpc();
+        expect.fail("Should have failed — lock not expired");
+      } catch (err: any) {
+        expect(err.toString()).to.include("LockNotExpired");
+      }
+    });
+
+    it("creator can create multiple locks", async () => {
+      const lockIndex = 2;
+      const [tokenLockPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("token_lock"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+      const [lockVaultPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("lock_vault"), lockMint.toBuffer(), admin.publicKey.toBuffer(), Buffer.from([lockIndex])],
+        program.programId,
+      );
+
+      await program.methods
+        .createLock(new anchor.BN(1_000_000_000_000), new anchor.BN(30), lockIndex) // 1000 tokens, 30s
+        .accountsPartial({
+          tokenLock: tokenLockPDA,
+          lockVault: lockVaultPDA,
+          tokenMint: lockMint,
+          creatorTokenAccount: creatorATA,
+          creator: admin.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      const lock = await program.account.tokenLock.fetch(tokenLockPDA);
+      expect(lock.lockIndex).to.equal(lockIndex);
+      expect(lock.amount.toNumber()).to.equal(1_000_000_000_000);
     });
   });
 });

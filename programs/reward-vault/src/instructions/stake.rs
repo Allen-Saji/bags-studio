@@ -30,9 +30,9 @@ pub struct Stake<'info> {
         token::mint = token_mint,
         token::authority = stake_pool,
     )]
-    pub stake_vault: InterfaceAccount<'info, TokenAccount>,
+    pub stake_vault: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub token_mint: InterfaceAccount<'info, Mint>,
+    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// User's token account to transfer from
     #[account(
@@ -40,7 +40,7 @@ pub struct Stake<'info> {
         token::mint = token_mint,
         token::authority = owner,
     )]
-    pub user_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub user_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub owner: Signer<'info>,
 

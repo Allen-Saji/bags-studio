@@ -18,7 +18,7 @@ pub struct ReleaseLock<'info> {
         has_one = creator,
         has_one = token_mint,
     )]
-    pub token_lock: Account<'info, TokenLock>,
+    pub token_lock: Box<Account<'info, TokenLock>>,
 
     #[account(
         mut,
@@ -32,9 +32,9 @@ pub struct ReleaseLock<'info> {
         token::mint = token_mint,
         token::authority = token_lock,
     )]
-    pub lock_vault: InterfaceAccount<'info, TokenAccount>,
+    pub lock_vault: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    pub token_mint: InterfaceAccount<'info, Mint>,
+    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// Creator's token account to receive unlocked tokens
     #[account(
@@ -42,7 +42,7 @@ pub struct ReleaseLock<'info> {
         token::mint = token_mint,
         token::authority = creator,
     )]
-    pub creator_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub creator_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
     pub creator: Signer<'info>,
