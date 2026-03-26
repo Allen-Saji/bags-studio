@@ -10,6 +10,8 @@ import ClaimableCard from '@/components/studio/ClaimableCard';
 import ReferralCard from '@/components/studio/ReferralCard';
 import ActivityFeed from '@/components/studio/ActivityFeed';
 import EngagementLeaderboard from '@/components/studio/EngagementLeaderboard';
+import StakingCard from '@/components/studio/StakingCard';
+import CreatorLockBadge from '@/components/studio/CreatorLockBadge';
 import Link from 'next/link';
 
 const fetcher = (url: string) => fetch(url).then(r => {
@@ -118,14 +120,25 @@ export default function CreatorDashboard({
         ))}
       </motion.div>
 
-      {/* Claimable fees */}
+      {/* Creator Lock Badge + Claimable fees */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+      >
+        <CreatorLockBadge mint={mint} />
+        <ClaimableCard mint={mint} />
+      </motion.div>
+
+      {/* Staking */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.28 }}
         className="mb-8"
       >
-        <ClaimableCard mint={mint} />
+        <StakingCard mint={mint} />
       </motion.div>
 
       {/* Referral & Activity */}
