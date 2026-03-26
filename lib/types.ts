@@ -258,6 +258,9 @@ export interface RewardVault {
   total_claimed: number;
   total_distributed: number;
   created_at: string;
+  vault_state_pda?: string;
+  treasury_pda?: string;
+  on_chain?: boolean;
 }
 
 export interface RewardEpoch {

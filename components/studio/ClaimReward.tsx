@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
+import { Transaction } from '@solana/web3.js';
 import { motion } from 'framer-motion';
 import useSWR from 'swr';
 import { RewardClaim } from '@/lib/types';
@@ -9,10 +11,12 @@ import { RewardClaim } from '@/lib/types';
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function ClaimReward({ mint }: { mint: string }) {
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
   const wallet = publicKey?.toBase58();
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [txSig, setTxSig] = useState('');
 
   const { data, mutate } = useSWR(
     wallet ? `/api/engage/${mint}/rewards/${wallet}` : null,
@@ -24,22 +28,40 @@ export default function ClaimReward({ mint }: { mint: string }) {
   const unclaimed = claims.filter(c => !c.claimed);
 
   const handleClaim = useCallback(async (claimId: string) => {
+    if (!wallet || !signTransaction) return;
     setClaimingId(claimId);
     setError('');
+    setTxSig('');
 
     try {
-      // In production this would sign a SOL transfer tx.
-      // For now, mark as claimed with a placeholder signature.
+      // Step 1: Get unsigned claim transaction from server
       const res = await fetch(`/api/engage/${mint}/rewards/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claim_id: claimId, signature: 'pending' }),
+        body: JSON.stringify({ claim_id: claimId, wallet }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Claim failed');
+        throw new Error(data.error || 'Failed to build claim transaction');
       }
+
+      const { transaction } = await res.json();
+
+      // Step 2: Sign and send
+      const tx = Transaction.from(Buffer.from(transaction, 'base64'));
+      const signed = await signTransaction(tx);
+      const sig = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(sig, 'confirmed');
+
+      setTxSig(sig);
+
+      // Step 3: Mark claimed in DB with real signature
+      await fetch(`/api/engage/${mint}/rewards/claim`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claim_id: claimId, signature: sig }),
+      });
 
       mutate();
     } catch (err) {
@@ -47,13 +69,13 @@ export default function ClaimReward({ mint }: { mint: string }) {
     } finally {
       setClaimingId(null);
     }
-  }, [mint, mutate]);
+  }, [mint, wallet, signTransaction, connection, mutate]);
 
   if (!wallet) {
     return (
       <div className="rounded-xl border border-border-subtle p-5">
         <h3 className="text-sm font-display font-bold mb-2">Engagement Rewards</h3>
-        <p className="text-xs text-gray-500">Connect wallet to see your rewards.</p>
+        <p className="text-xs text-gray-500">Connect a wallet to claim rewards.</p>
       </div>
     );
   }
@@ -92,13 +114,27 @@ export default function ClaimReward({ mint }: { mint: string }) {
               </div>
               <button
                 onClick={() => handleClaim(claim.id)}
-                disabled={claimingId === claim.id}
+                disabled={claimingId === claim.id || !signTransaction}
                 className="px-3 py-1.5 text-xs font-mono rounded-lg bg-green/20 text-green border border-green/30 hover:bg-green/30 transition-colors disabled:opacity-50"
               >
-                {claimingId === claim.id ? '...' : 'Claim'}
+                {claimingId === claim.id ? 'Signing...' : 'Claim'}
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {txSig && (
+        <div className="mt-3 p-2 rounded-lg bg-green/5 border border-green/20">
+          <p className="text-xs text-green mb-1">Claimed successfully!</p>
+          <a
+            href={`https://solscan.io/tx/${txSig}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-mono text-green/70 hover:text-green transition-colors break-all"
+          >
+            View on Solscan →
+          </a>
         </div>
       )}
 

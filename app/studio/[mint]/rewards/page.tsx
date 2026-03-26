@@ -2,6 +2,9 @@
 
 import { use, useState } from 'react';
 import useSWR from 'swr';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
+import { Transaction } from '@solana/web3.js';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import VaultConfig from '@/components/studio/VaultConfig';
@@ -89,39 +92,41 @@ function SetupGuide({ currentStep, mint, vaultWallet }: { currentStep: number; m
 }
 
 function ManualEpochTrigger({ mint, onCreated }: { mint: string; onCreated: () => void }) {
+  const { publicKey, signTransaction } = useWallet();
+  const { connection } = useConnection();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleTrigger = async () => {
+    if (!publicKey || !signTransaction) return;
     setRunning(true);
     setResult(null);
 
     try {
-      // First get vault balance
-      const vaultRes = await fetch(`/api/engage/${mint}/vault`);
-      const vaultData = await vaultRes.json();
-      const vault = vaultData?.vault;
-
-      if (!vault) {
-        setResult({ success: false, message: 'Vault not configured' });
-        return;
-      }
-
-      // Fetch vault SOL balance via RPC
-      const rpcUrl = '/api/engage/' + mint + '/vault/balance';
-      // Use the epoch endpoint directly
-      const res = await fetch(`/api/engage/${mint}/rewards/epoch`, {
+      // Call distribute endpoint — builds merkle tree + returns unsigned tx
+      const res = await fetch(`/api/engage/${mint}/rewards/distribute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vault_balance_lamports: 0 }), // Let server fetch balance
+        body: JSON.stringify({ caller: publicKey.toBase58() }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to create epoch');
+        throw new Error(data.error || 'Failed to create distribution');
       }
 
-      setResult({ success: true, message: 'Epoch created! Rewards distributed to eligible wallets.' });
+      const { transaction, eligibleWallets, totalAllocation } = await res.json();
+
+      // Sign and send the update_distribution tx
+      const tx = Transaction.from(Buffer.from(transaction, 'base64'));
+      const signed = await signTransaction(tx);
+      const sig = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(sig, 'confirmed');
+
+      setResult({
+        success: true,
+        message: `Distributed ${(totalAllocation / 1e9).toFixed(4)} SOL to ${eligibleWallets} wallets. Tx: ${sig.slice(0, 8)}...`,
+      });
       onCreated();
     } catch (err) {
       setResult({ success: false, message: err instanceof Error ? err.message : 'Failed' });
@@ -138,26 +143,30 @@ function ManualEpochTrigger({ mint, onCreated }: { mint: string; onCreated: () =
     >
       <h3 className="text-sm font-display font-bold mb-1">Distribute Rewards</h3>
       <p className="text-xs text-gray-500 mb-4">
-        Trigger a distribution now. This snapshots the current leaderboard and allocates the vault balance pro-rata based on engagement points.
+        Snapshot the leaderboard and post a merkle root on-chain. Holders can then claim their SOL.
       </p>
 
       <div className="rounded-lg bg-surface-2 border border-border-subtle p-3 mb-4">
-        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">How distribution works</div>
+        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">How it works</div>
         <div className="text-xs text-gray-400 space-y-1">
-          <p>1. Reads your vault wallet&apos;s SOL balance</p>
+          <p>1. Reads the Treasury PDA&apos;s SOL balance</p>
           <p>2. Snapshots the engagement leaderboard</p>
-          <p>3. Allocates: <span className="text-green font-mono">(wallet_points / total_points) × vault_balance</span></p>
-          <p>4. Creates claimable rewards for each eligible wallet</p>
+          <p>3. Builds a merkle tree: <span className="text-green font-mono">(points / total) x balance</span></p>
+          <p>4. Posts merkle root on-chain — holders claim with proofs</p>
         </div>
       </div>
 
-      <button
-        onClick={handleTrigger}
-        disabled={running}
-        className="w-full py-2.5 rounded-lg bg-green text-black text-sm font-semibold hover:bg-green-dark transition-colors disabled:opacity-50"
-      >
-        {running ? 'Creating epoch...' : 'Distribute Now'}
-      </button>
+      {!publicKey ? (
+        <p className="text-xs text-yellow-500">Connect a wallet to sign the distribution transaction.</p>
+      ) : (
+        <button
+          onClick={handleTrigger}
+          disabled={running}
+          className="w-full py-2.5 rounded-lg bg-green text-black text-sm font-semibold hover:bg-green-dark transition-colors disabled:opacity-50"
+        >
+          {running ? 'Distributing...' : 'Distribute Now'}
+        </button>
+      )}
 
       {result && (
         <p className={`text-xs mt-2 ${result.success ? 'text-green' : 'text-red'}`}>
