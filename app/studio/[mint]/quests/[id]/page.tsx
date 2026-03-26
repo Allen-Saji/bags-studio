@@ -2,6 +2,7 @@
 
 import { use, useState, useCallback } from 'react';
 import useSWR from 'swr';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import SubmissionReview from '@/components/studio/SubmissionReview';
@@ -50,9 +51,11 @@ export default function QuestDetailPage({
   params: Promise<{ mint: string; id: string }>;
 }) {
   const { mint, id } = use(params);
+  const router = useRouter();
   const { isCreator, wallet, role } = useTokenRole(mint);
 
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [proofUrl, setProofUrl] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -130,6 +133,22 @@ export default function QuestDetailPage({
       setSubmitting(false);
     }
   }, [wallet, mint, id, quest, mutate]);
+
+  const handleDelete = useCallback(async () => {
+    if (!confirm('Delete this quest? Existing completions will be kept.')) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/engage/${mint}/quests/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete');
+      }
+      router.push(`/studio/${mint}/quests`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete');
+      setDeleting(false);
+    }
+  }, [mint, id, router]);
 
   if (fetchError) {
     return (
@@ -217,6 +236,19 @@ export default function QuestDetailPage({
             </div>
           )}
         </div>
+
+        {/* Creator: delete quest */}
+        {isCreator && (
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs font-mono hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            >
+              {deleting ? 'Deleting...' : 'Delete Quest'}
+            </button>
+          </div>
+        )}
 
         {/* Creator: submission review */}
         {isCreator && isApprovalType && (

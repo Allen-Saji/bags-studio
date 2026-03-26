@@ -43,7 +43,8 @@ async function fetchHolders(mint: string, rpc: string): Promise<TokenHolder[]> {
   return holders;
 }
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
+  // Vercel cron sends GET with Authorization header
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -90,3 +91,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ results });
 }
+
+export const GET = handler;
+export const POST = handler;
