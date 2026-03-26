@@ -1,25 +1,14 @@
 'use client';
 
 import { use } from 'react';
-import useSWR from 'swr';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import QuestList from '@/components/studio/QuestList';
-
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+import { useTokenRole } from '@/lib/use-token-role';
 
 export default function QuestsPage({ params }: { params: Promise<{ mint: string }> }) {
   const { mint } = use(params);
-  const { publicKey } = useWallet();
-  const wallet = publicKey?.toBase58();
-
-  const { data } = useSWR(`/api/dashboard/${mint}`, fetcher, {
-    revalidateOnFocus: false,
-  });
-
-  const creator = data?.creators?.find((c: { isCreator: boolean }) => c.isCreator);
-  const isCreator = wallet && creator?.wallet === wallet;
+  const { isCreator } = useTokenRole(mint);
 
   return (
     <div>

@@ -103,7 +103,7 @@ export default function CreatorDashboard({
         {[
           { href: `/studio/${mint}/community`, label: 'Community' },
           { href: `/studio/${mint}/trade`, label: 'Trade' },
-          { href: `/studio/${mint}/apps`, label: 'Apps' },
+          // { href: `/studio/${mint}/apps`, label: 'Apps' }, // removed — placeholder
           { href: `/studio/${mint}/quests`, label: 'Quests' },
           { href: `/studio/${mint}/rewards`, label: 'Rewards' },
           // { href: `/studio/${mint}/campaigns`, label: 'Campaigns' }, // v2

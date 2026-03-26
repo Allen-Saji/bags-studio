@@ -2,12 +2,12 @@
 
 import { use, useState } from 'react';
 import useSWR from 'swr';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import VaultConfig from '@/components/studio/VaultConfig';
 import RewardEpoch from '@/components/studio/RewardEpoch';
 import ClaimReward from '@/components/studio/ClaimReward';
+import { useTokenRole } from '@/lib/use-token-role';
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error(`${r.status}`);
@@ -170,20 +170,12 @@ function ManualEpochTrigger({ mint, onCreated }: { mint: string; onCreated: () =
 
 export default function RewardsPage({ params }: { params: Promise<{ mint: string }> }) {
   const { mint } = use(params);
-  const { publicKey } = useWallet();
-  const wallet = publicKey?.toBase58();
-
-  const { data: dashData } = useSWR(`/api/dashboard/${mint}`, fetcher, {
-    revalidateOnFocus: false,
-  });
+  const { isCreator, wallet } = useTokenRole(mint);
 
   const { data: vaultData, isLoading, error, mutate } = useSWR(
     `/api/engage/${mint}/vault`,
     fetcher,
   );
-
-  const creator = dashData?.creators?.find((c: { isCreator: boolean }) => c.isCreator);
-  const isCreator = wallet && creator?.wallet === wallet;
 
   if (error) {
     return (
@@ -243,7 +235,7 @@ export default function RewardsPage({ params }: { params: Promise<{ mint: string
             <VaultConfig
               vault={vault}
               mint={mint}
-              creatorWallet={wallet!}
+              creatorWallet={wallet || ''}
               onSetup={() => mutate()}
             />
           </motion.div>

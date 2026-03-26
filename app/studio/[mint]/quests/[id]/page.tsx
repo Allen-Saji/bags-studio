@@ -2,12 +2,12 @@
 
 import { use, useState, useCallback } from 'react';
 import useSWR from 'swr';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import SubmissionReview from '@/components/studio/SubmissionReview';
 import { Quest } from '@/lib/types';
-import { QUEST_TYPES, TIER_ORDER } from '@/lib/constants';
+import { QUEST_TYPES } from '@/lib/constants';
+import { useTokenRole } from '@/lib/use-token-role';
 
 const fetcher = (url: string) => fetch(url).then(r => {
   if (!r.ok) throw new Error(`${r.status}`);
@@ -50,8 +50,7 @@ export default function QuestDetailPage({
   params: Promise<{ mint: string; id: string }>;
 }) {
   const { mint, id } = use(params);
-  const { publicKey } = useWallet();
-  const wallet = publicKey?.toBase58();
+  const { isCreator, wallet, role } = useTokenRole(mint);
 
   const [submitting, setSubmitting] = useState(false);
   const [proofUrl, setProofUrl] = useState('');
@@ -64,18 +63,12 @@ export default function QuestDetailPage({
     fetcher,
   );
 
-  const { data: dashData } = useSWR(`/api/dashboard/${mint}`, fetcher, {
-    revalidateOnFocus: false,
-  });
-
   const quest: Quest | null = questData?.quest || null;
   const submissions = questData?.submissions || [];
   const completed = questData?.completed || false;
   const completionCount = questData?.completionCount || 0;
   const progress = questData?.progress || null;
 
-  const creator = dashData?.creators?.find((c: { isCreator: boolean }) => c.isCreator);
-  const isCreator = wallet && creator?.wallet === wallet;
   const isApprovalType = quest?.requires_approval;
   const isAutoVerifiable = quest && !quest.requires_approval;
 
@@ -89,7 +82,7 @@ export default function QuestDetailPage({
       const res = await fetch(`/api/engage/${mint}/quests/${id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet, proof_url: proofUrl || null }),
+        body: JSON.stringify({ proof_url: proofUrl || null }),
       });
 
       if (!res.ok) {
@@ -117,7 +110,7 @@ export default function QuestDetailPage({
       const res = await fetch(`/api/engage/${mint}/quests/${id}/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet }),
+        body: JSON.stringify({}),
       });
 
       const data = await res.json();
@@ -157,8 +150,8 @@ export default function QuestDetailPage({
     );
   }
 
-  // Use checkResult if available, otherwise use progress from API
   const displayProgress = checkResult || progress;
+  const isSignedIn = role !== 'visitor' && role !== 'loading';
 
   return (
     <div className="max-w-2xl">
@@ -205,7 +198,6 @@ export default function QuestDetailPage({
             )}
           </div>
 
-          {/* Progress bar for auto-verifiable quests */}
           {displayProgress && displayProgress.current_value >= 0 && !completed && (
             <div className="mt-4">
               <div className="flex items-center justify-between text-xs mb-1.5">
@@ -232,14 +224,14 @@ export default function QuestDetailPage({
             <SubmissionReview
               submissions={submissions}
               mint={mint}
-              creatorWallet={wallet!}
+              creatorWallet={wallet || ''}
               onReviewed={() => mutate()}
             />
           </div>
         )}
 
         {/* Supporter actions */}
-        {wallet && !isCreator && !completed && (
+        {isSignedIn && !isCreator && !completed && (
           <div className="rounded-xl border border-border-subtle p-5 space-y-4">
             {isAutoVerifiable && (
               <button
@@ -289,9 +281,9 @@ export default function QuestDetailPage({
           </div>
         )}
 
-        {!wallet && (
+        {!isSignedIn && (
           <div className="rounded-xl border border-border-subtle p-5 text-center">
-            <p className="text-sm text-gray-500">Connect your wallet to participate in this quest.</p>
+            <p className="text-sm text-gray-500">Sign in to participate in this quest.</p>
           </div>
         )}
       </motion.div>
