@@ -42,7 +42,7 @@ function Sidebar() {
       { href: `/studio/${mint}/trade`, label: 'Trade', icon: '⇄' },
       { href: `/studio/${mint}/quests`, label: 'Quests', icon: '★' },
       { href: `/studio/${mint}/rewards`, label: 'Rewards', icon: '◎' },
-      { href: `/studio/${mint}/apps`, label: 'Apps', icon: '⊞' },
+      // { href: `/studio/${mint}/apps`, label: 'Apps', icon: '⊞' }, // removed — placeholder
     );
   }
 
