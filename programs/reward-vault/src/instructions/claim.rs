@@ -58,24 +58,32 @@ pub fn handler(ctx: Context<Claim>, amount: u64, proof: Vec<[u8; 32]>) -> Result
         RewardVaultError::InvalidProof
     );
 
-    // Check treasury has enough SOL while maintaining rent exemption
-    let treasury_info = ctx.accounts.treasury.to_account_info();
-    let treasury_lamports = treasury_info.lamports();
-    let rent = Rent::get()?;
-    let min_rent = rent.minimum_balance(0);
-
-    // Treasury must retain enough for rent exemption after transfer
-    let available = treasury_lamports.saturating_sub(min_rent);
+    // Check treasury has enough SOL
+    let treasury_lamports = ctx.accounts.treasury.lamports();
     require!(
-        available >= amount,
+        treasury_lamports >= amount,
         RewardVaultError::InsufficientFunds
     );
 
-    // Transfer SOL from treasury PDA to claimant via lamport manipulation
-    let claimant_info = ctx.accounts.claimant.to_account_info();
+    // Transfer SOL from treasury PDA to claimant via CPI with PDA signer
+    let mint_key = vault.token_mint;
+    let treasury_seeds: &[&[u8]] = &[
+        b"treasury",
+        mint_key.as_ref(),
+        &[vault.treasury_bump],
+    ];
 
-    **treasury_info.try_borrow_mut_lamports()? -= amount;
-    **claimant_info.try_borrow_mut_lamports()? += amount;
+    anchor_lang::system_program::transfer(
+        CpiContext::new_with_signer(
+            ctx.accounts.system_program.to_account_info(),
+            anchor_lang::system_program::Transfer {
+                from: ctx.accounts.treasury.to_account_info(),
+                to: ctx.accounts.claimant.to_account_info(),
+            },
+            &[treasury_seeds],
+        ),
+        amount,
+    )?;
 
     // Mark as claimed
     let claim_status = &mut ctx.accounts.claim_status;

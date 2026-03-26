@@ -13,7 +13,8 @@ pub struct InitializeVault<'info> {
     )]
     pub vault_state: Account<'info, VaultState>,
 
-    /// The treasury PDA that will hold SOL. Created as a system-owned account.
+    /// The treasury PDA that will hold SOL. System-owned — we use CPI transfer with PDA signer.
+    /// CHECK: Derived via seeds, used only to hold lamports.
     #[account(
         seeds = [b"treasury", token_mint.key().as_ref()],
         bump,
