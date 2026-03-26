@@ -1,0 +1,6 @@
+programs/
+target/
+.anchor/
+tests/reward-vault.ts
+tsconfig.test.json
+Anchor.toml
