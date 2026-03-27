@@ -42,10 +42,9 @@ yarn-error.log*
 next-env.d.ts
 # anchor / solana build artifacts
 programs/reward-vault/target/
-target/deploy/
-target/idl/
-target/types/
+target/
 .anchor/
+*-keypair.json
 
 # claude
 CLAUDE.md

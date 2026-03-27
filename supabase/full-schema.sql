@@ -1,10 +1,16 @@
--- BagsStudio Supabase Schema
--- Run this in Supabase SQL Editor to set up the database
+-- BagsStudio Complete Schema
+-- Run this once on a fresh Supabase project
+-- Includes: base schema + all migrations
 
--- Enable UUID generation
+-- ============================================================
+-- Extensions
+-- ============================================================
 create extension if not exists "uuid-ossp";
 
--- Coins connected by creators
+-- ============================================================
+-- Core Tables
+-- ============================================================
+
 create table if not exists coins (
   id uuid primary key default uuid_generate_v4(),
   mint_address text unique not null,
@@ -15,7 +21,6 @@ create table if not exists coins (
   connected_at timestamptz default now()
 );
 
--- Cached conviction scores (refreshed periodically)
 create table if not exists supporter_scores (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -33,7 +38,6 @@ create table if not exists supporter_scores (
   unique(mint_address, wallet)
 );
 
--- Campaigns created by coin creators
 create table if not exists campaigns (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -47,7 +51,6 @@ create table if not exists campaigns (
   created_at timestamptz default now()
 );
 
--- Campaign eligibility snapshots
 create table if not exists campaign_eligibility (
   id uuid primary key default uuid_generate_v4(),
   campaign_id uuid references campaigns(id) on delete cascade,
@@ -59,35 +62,10 @@ create table if not exists campaign_eligibility (
   unique(campaign_id, wallet)
 );
 
--- Indexes
-create index if not exists idx_coins_mint on coins(mint_address);
-create index if not exists idx_coins_creator on coins(creator_wallet);
-create index if not exists idx_scores_mint on supporter_scores(mint_address);
-create index if not exists idx_scores_wallet on supporter_scores(wallet);
-create index if not exists idx_campaigns_mint on campaigns(mint_address);
-create index if not exists idx_campaigns_creator on campaigns(creator_wallet);
-create index if not exists idx_eligibility_campaign on campaign_eligibility(campaign_id);
-create index if not exists idx_eligibility_wallet on campaign_eligibility(wallet);
-
--- Row Level Security
-alter table coins enable row level security;
-alter table supporter_scores enable row level security;
-alter table campaigns enable row level security;
-alter table campaign_eligibility enable row level security;
-
--- Public read access for campaigns and eligibility (supporters need to check)
-create policy "Public read campaigns" on campaigns for select using (true);
-create policy "Public read eligibility" on campaign_eligibility for select using (true);
-create policy "Public read scores" on supporter_scores for select using (true);
-create policy "Public read coins" on coins for select using (true);
-
--- Service role has full access (handled by service key)
-
 -- ============================================================
--- Engagement Platform Tables
+-- Engagement Tables
 -- ============================================================
 
--- Reward vaults per coin
 create table if not exists reward_vaults (
   mint_address text primary key,
   vault_wallet text not null,
@@ -95,21 +73,23 @@ create table if not exists reward_vaults (
   funding_source text default 'direct',
   total_claimed numeric default 0,
   total_distributed numeric default 0,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  -- On-chain fields
+  vault_state_pda text,
+  treasury_pda text,
+  on_chain boolean default false
 );
 
--- Individual engagement point events
 create table if not exists engagement_points (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
   wallet text not null,
   points int not null,
-  source text not null check (source in ('hold', 'claim', 'referral', 'quest', 'streak')),
+  source text not null check (source in ('hold', 'claim', 'referral', 'quest', 'streak', 'stake')),
   source_id text,
   created_at timestamptz default now()
 );
 
--- Aggregated leaderboard per coin
 create table if not exists engagement_leaderboard (
   mint_address text not null,
   wallet text not null,
@@ -118,12 +98,12 @@ create table if not exists engagement_leaderboard (
   quest_points numeric default 0,
   streak_points numeric default 0,
   hold_points numeric default 0,
+  stake_points numeric default 0,
   rank int default 0,
   updated_at timestamptz default now(),
   primary key (mint_address, wallet)
 );
 
--- Referral codes
 create table if not exists referral_codes (
   code text primary key,
   mint_address text not null,
@@ -132,7 +112,6 @@ create table if not exists referral_codes (
   unique (mint_address, wallet)
 );
 
--- Referral tracking
 create table if not exists referrals (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -145,7 +124,6 @@ create table if not exists referrals (
   unique (mint_address, referred_wallet)
 );
 
--- Quests created by coin creators
 create table if not exists quests (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -162,7 +140,6 @@ create table if not exists quests (
   created_at timestamptz default now()
 );
 
--- Quest completions
 create table if not exists quest_completions (
   id uuid primary key default uuid_generate_v4(),
   quest_id uuid references quests(id) on delete cascade,
@@ -171,7 +148,6 @@ create table if not exists quest_completions (
   unique (quest_id, wallet)
 );
 
--- Quest submissions (for approval-required quests)
 create table if not exists quest_submissions (
   id uuid primary key default uuid_generate_v4(),
   quest_id uuid references quests(id) on delete cascade,
@@ -183,7 +159,6 @@ create table if not exists quest_submissions (
   unique (quest_id, wallet)
 );
 
--- Activity feed
 create table if not exists activity_feed (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -194,7 +169,6 @@ create table if not exists activity_feed (
   created_at timestamptz default now()
 );
 
--- Holding streaks
 create table if not exists holding_streaks (
   mint_address text not null,
   wallet text not null,
@@ -204,7 +178,6 @@ create table if not exists holding_streaks (
   primary key (mint_address, wallet)
 );
 
--- Reward distribution epochs
 create table if not exists reward_epochs (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -213,10 +186,13 @@ create table if not exists reward_epochs (
   distributed numeric default 0,
   eligible_wallets int default 0,
   created_at timestamptz default now(),
+  -- On-chain fields
+  merkle_root text,
+  epoch_ends_at timestamptz,
+  total_allocation_lamports numeric default 0,
   unique (mint_address, epoch_number)
 );
 
--- Individual reward claims per epoch
 create table if not exists reward_claims (
   id uuid primary key default uuid_generate_v4(),
   epoch_id uuid references reward_epochs(id) on delete cascade,
@@ -227,10 +203,12 @@ create table if not exists reward_claims (
   claimed boolean default false,
   signature text,
   claimed_at timestamptz,
+  -- On-chain fields
+  merkle_proof jsonb,
+  on_chain_epoch numeric,
   unique (epoch_id, wallet)
 );
 
--- Trade logs for volume tracking
 create table if not exists trade_logs (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -242,7 +220,6 @@ create table if not exists trade_logs (
   created_at timestamptz default now()
 );
 
--- Community posts (social wall per token)
 create table if not exists community_posts (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -251,7 +228,6 @@ create table if not exists community_posts (
   created_at timestamptz default now()
 );
 
--- Post reactions
 create table if not exists post_reactions (
   id uuid primary key default uuid_generate_v4(),
   post_id uuid not null references community_posts(id) on delete cascade,
@@ -261,7 +237,6 @@ create table if not exists post_reactions (
   unique (post_id, wallet, emoji)
 );
 
--- Achievement badges
 create table if not exists achievements (
   id uuid primary key default uuid_generate_v4(),
   mint_address text not null,
@@ -272,9 +247,47 @@ create table if not exists achievements (
 );
 
 -- ============================================================
--- Engagement Platform Indexes
+-- Staking & Lock Tables
 -- ============================================================
 
+create table if not exists stake_positions (
+  mint_address text not null,
+  wallet text not null,
+  amount numeric not null default 0,
+  staked_at timestamptz,
+  last_points_claim_ts timestamptz,
+  stake_pool_pda text not null,
+  user_stake_pda text not null,
+  updated_at timestamptz default now(),
+  primary key (mint_address, wallet)
+);
+
+create table if not exists token_locks (
+  id uuid primary key default uuid_generate_v4(),
+  mint_address text not null,
+  creator_wallet text not null,
+  lock_index smallint not null,
+  amount numeric not null,
+  lock_start timestamptz not null,
+  lock_end timestamptz not null,
+  released boolean default false,
+  token_lock_pda text not null,
+  created_at timestamptz default now(),
+  unique (mint_address, creator_wallet, lock_index)
+);
+
+-- ============================================================
+-- All Indexes
+-- ============================================================
+
+create index if not exists idx_coins_mint on coins(mint_address);
+create index if not exists idx_coins_creator on coins(creator_wallet);
+create index if not exists idx_scores_mint on supporter_scores(mint_address);
+create index if not exists idx_scores_wallet on supporter_scores(wallet);
+create index if not exists idx_campaigns_mint on campaigns(mint_address);
+create index if not exists idx_campaigns_creator on campaigns(creator_wallet);
+create index if not exists idx_eligibility_campaign on campaign_eligibility(campaign_id);
+create index if not exists idx_eligibility_wallet on campaign_eligibility(wallet);
 create index if not exists idx_engagement_points_mint on engagement_points(mint_address);
 create index if not exists idx_engagement_points_wallet on engagement_points(wallet);
 create index if not exists idx_engagement_points_source on engagement_points(source);
@@ -308,11 +321,19 @@ create index if not exists idx_community_posts_mint_time on community_posts(mint
 create index if not exists idx_community_posts_wallet on community_posts(wallet);
 create index if not exists idx_post_reactions_post on post_reactions(post_id);
 create index if not exists idx_achievements_mint_wallet on achievements(mint_address, wallet);
+create index if not exists idx_stake_positions_mint on stake_positions(mint_address);
+create index if not exists idx_stake_positions_wallet on stake_positions(wallet);
+create index if not exists idx_token_locks_mint on token_locks(mint_address);
+create index if not exists idx_token_locks_creator on token_locks(creator_wallet);
 
 -- ============================================================
--- Engagement Platform RLS
+-- Row Level Security
 -- ============================================================
 
+alter table coins enable row level security;
+alter table supporter_scores enable row level security;
+alter table campaigns enable row level security;
+alter table campaign_eligibility enable row level security;
 alter table reward_vaults enable row level security;
 alter table engagement_points enable row level security;
 alter table engagement_leaderboard enable row level security;
@@ -329,8 +350,14 @@ alter table trade_logs enable row level security;
 alter table community_posts enable row level security;
 alter table post_reactions enable row level security;
 alter table achievements enable row level security;
+alter table stake_positions enable row level security;
+alter table token_locks enable row level security;
 
 -- Public read policies
+create policy "Public read coins" on coins for select using (true);
+create policy "Public read scores" on supporter_scores for select using (true);
+create policy "Public read campaigns" on campaigns for select using (true);
+create policy "Public read eligibility" on campaign_eligibility for select using (true);
 create policy "Public read reward_vaults" on reward_vaults for select using (true);
 create policy "Public read engagement_points" on engagement_points for select using (true);
 create policy "Public read engagement_leaderboard" on engagement_leaderboard for select using (true);
@@ -347,3 +374,5 @@ create policy "Public read trade_logs" on trade_logs for select using (true);
 create policy "Public read community_posts" on community_posts for select using (true);
 create policy "Public read post_reactions" on post_reactions for select using (true);
 create policy "Public read achievements" on achievements for select using (true);
+create policy "Public read stake_positions" on stake_positions for select using (true);
+create policy "Public read token_locks" on token_locks for select using (true);

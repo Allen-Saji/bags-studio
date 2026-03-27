@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth-session';
 import { PublicKey, Transaction, Connection } from '@solana/web3.js';
 import {
   getVaultStatePDA,
@@ -21,6 +22,10 @@ export async function POST(
   { params }: { params: Promise<{ mint: string }> },
 ) {
   const { mint } = await params;
+
+  // Require authentication to trigger distribution
+  const authResult = await requireAuth(mint);
+  if (authResult instanceof Response) return authResult;
 
   let body: { caller: string };
   try {
@@ -73,11 +78,16 @@ export async function POST(
       0,
     );
 
-    // Compute pro-rata allocations
+    // Platform fee: 2% of treasury balance
+    const PLATFORM_FEE_BPS = 200; // 2%
+    const platformFee = Math.floor(treasuryBalance * PLATFORM_FEE_BPS / 10000);
+    const distributableBalance = treasuryBalance - platformFee;
+
+    // Compute pro-rata allocations from distributable balance (after platform fee)
     const entries = leaderboard.map((e) => ({
       wallet: e.wallet,
       amount: BigInt(
-        Math.floor((Number(e.total_points) / totalPoints) * treasuryBalance),
+        Math.floor((Number(e.total_points) / totalPoints) * distributableBalance),
       ),
       points: Number(e.total_points),
     }));
@@ -179,6 +189,8 @@ export async function POST(
       totalAllocation: Number(totalAllocation),
       eligibleWallets: nonZeroEntries.length,
       treasuryBalance,
+      platformFee,
+      platformFeeBps: PLATFORM_FEE_BPS,
     });
   } catch (err) {
     console.error('Distribute error:', err);

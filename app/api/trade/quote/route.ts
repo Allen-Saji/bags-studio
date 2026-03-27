@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTradeQuote } from '@/lib/bags-wrapper';
 
+// Platform swap fee: 0.25% (25 basis points)
+const PLATFORM_FEE_BPS = 25;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const inputMint = searchParams.get('inputMint');
@@ -14,7 +17,18 @@ export async function GET(request: NextRequest) {
 
   try {
     const quote = await getTradeQuote({ inputMint, outputMint, amount, slippageBps });
-    return NextResponse.json(quote);
+
+    // Calculate platform fee on output amount
+    const outAmount = Number(quote.outAmount || (quote as Record<string, unknown>).outputAmount || 0);
+    const platformFee = Math.floor(outAmount * PLATFORM_FEE_BPS / 10000);
+    const netOutput = outAmount - platformFee;
+
+    return NextResponse.json({
+      ...quote,
+      platformFee,
+      platformFeeBps: PLATFORM_FEE_BPS,
+      netOutput,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to get trade quote';
     return NextResponse.json({ error: message }, { status: 500 });
