@@ -40,8 +40,14 @@ CREATE INDEX IF NOT EXISTS idx_token_locks_creator ON token_locks(creator_wallet
 -- RLS
 ALTER TABLE stake_positions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE token_locks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read stake_positions" ON stake_positions FOR SELECT USING (true);
-CREATE POLICY "Public read token_locks" ON token_locks FOR SELECT USING (true);
+DO $$ BEGIN
+  CREATE POLICY "Public read stake_positions" ON stake_positions FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Public read token_locks" ON token_locks FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Add stake_points column to leaderboard
 ALTER TABLE engagement_leaderboard ADD COLUMN IF NOT EXISTS stake_points numeric DEFAULT 0;

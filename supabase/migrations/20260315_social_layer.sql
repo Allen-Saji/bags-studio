@@ -38,6 +38,15 @@ ALTER TABLE community_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE achievements ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public read community_posts" ON community_posts FOR SELECT USING (true);
-CREATE POLICY "Public read post_reactions" ON post_reactions FOR SELECT USING (true);
-CREATE POLICY "Public read achievements" ON achievements FOR SELECT USING (true);
+DO $$ BEGIN
+  CREATE POLICY "Public read community_posts" ON community_posts FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Public read post_reactions" ON post_reactions FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "Public read achievements" ON achievements FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
