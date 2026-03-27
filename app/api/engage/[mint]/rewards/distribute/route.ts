@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth-session';
 import { PublicKey, Transaction, Connection } from '@solana/web3.js';
 import {
   getVaultStatePDA,
@@ -21,6 +22,10 @@ export async function POST(
   { params }: { params: Promise<{ mint: string }> },
 ) {
   const { mint } = await params;
+
+  // Require authentication to trigger distribution
+  const authResult = await requireAuth(mint);
+  if (authResult instanceof Response) return authResult;
 
   let body: { caller: string };
   try {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSwapTransaction } from '@/lib/bags-wrapper';
 import { logTrade, resolveTokenMint } from '@/lib/trades';
 import { Transaction, PublicKey, SystemProgram } from '@solana/web3.js';
+import { requireAuth } from '@/lib/auth-session';
 
 // Platform fee wallet — receives 0.25% swap fees
 const PLATFORM_FEE_WALLET = new PublicKey(
@@ -25,6 +26,10 @@ export async function POST(request: NextRequest) {
     slippageBps?: number;
     wallet: string;
   };
+
+  // Require authentication for swaps
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
 
   if (!inputMint || !outputMint || !amount || !wallet) {
     return NextResponse.json({ error: 'Missing required fields: inputMint, outputMint, amount, wallet' }, { status: 400 });

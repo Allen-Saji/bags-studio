@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClaimTransactions } from '@/lib/bags-wrapper';
+import { requireAuth } from '@/lib/auth-session';
 
 export async function POST(request: NextRequest) {
+  // Require authentication for fee claiming
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -9,7 +14,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { wallet, tokenMint } = body as { wallet: string; tokenMint: string };
+  const wallet = authResult.wallet || (body as { wallet: string }).wallet;
+  const { tokenMint } = body as { tokenMint: string };
 
   if (!wallet || !tokenMint) {
     return NextResponse.json({ error: 'Missing required fields: wallet, tokenMint' }, { status: 400 });

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { refreshFullLeaderboard } from '@/lib/points';
+import { requireRole } from '@/lib/auth-session';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ mint: string }> }
 ) {
   const { mint } = await params;
+
+  // Only admin/creator can trigger expensive leaderboard refresh
+  const authResult = await requireRole(mint, 'admin');
+  if (authResult instanceof Response) return authResult;
 
   try {
     await refreshFullLeaderboard(mint);

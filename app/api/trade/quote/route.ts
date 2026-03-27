@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const quote = await getTradeQuote({ inputMint, outputMint, amount, slippageBps });
 
     // Calculate platform fee on output amount
-    const outAmount = Number(quote.outAmount || quote.outputAmount || 0);
+    const outAmount = Number(quote.outAmount || (quote as Record<string, unknown>).outputAmount || 0);
     const platformFee = Math.floor(outAmount * PLATFORM_FEE_BPS / 10000);
     const netOutput = outAmount - platformFee;
 

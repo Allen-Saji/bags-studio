@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClaimablePositions } from '@/lib/bags-wrapper';
+import { requireAuth } from '@/lib/auth-session';
 
 export async function GET(request: NextRequest) {
-  const wallet = request.nextUrl.searchParams.get('wallet');
+  // Require authentication for viewing positions
+  const authResult = await requireAuth();
+  if (authResult instanceof Response) return authResult;
+
+  const wallet = request.nextUrl.searchParams.get('wallet') || authResult.wallet;
 
   if (!wallet) {
     return NextResponse.json({ error: 'Missing required param: wallet' }, { status: 400 });
